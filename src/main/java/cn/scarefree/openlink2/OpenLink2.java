@@ -49,17 +49,17 @@ public class OpenLink2 {
 	}
 
 	private static ResourceLocation id(String path) {
-		//? > 1.19.2 {
+		//? > 1.20.1 {
 		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
-		 //?} <= 1.19.2 {
+		 //?} <= 1.20.1 {
 		/*return new ResourceLocation(MOD_ID, path);
 		*///?}
 	}
 
 	private static ResourceLocation id(String namespace, String path) {
-		//? > 1.19.2 {
+		//? > 1.20.1 {
 		return ResourceLocation.fromNamespaceAndPath(namespace, path);
-		 //?} <= 1.19.2 {
+		 //?} <= 1.20.1 {
 		/*return new ResourceLocation(namespace, path);
 		*///?}
 	}

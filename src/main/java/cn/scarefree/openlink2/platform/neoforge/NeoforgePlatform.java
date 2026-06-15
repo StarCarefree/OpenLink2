@@ -2,7 +2,7 @@ package cn.scarefree.openlink2.platform.neoforge;
 
 //? neoforge {
 
-/*import platform.cn.scarefree.openlink2.Platform;
+/*import cn.scarefree.openlink2.platform.Platform;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.VersionInfo;

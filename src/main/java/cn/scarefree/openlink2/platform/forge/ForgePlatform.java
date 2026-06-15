@@ -2,7 +2,7 @@ package cn.scarefree.openlink2.platform.forge;
 
 //? forge {
 
-import platform.cn.scarefree.openlink2.Platform;
+import cn.scarefree.openlink2.platform.Platform;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLLoader;
 
