@@ -73,7 +73,7 @@ e.g. `[fabric."1.21.7"]`.
 
 #### 5. **Rename package structure**
 
-Rename the `com.example.modtemplate` package in
+Rename the `cn.scarefree.openlink2` package in
 `src/main/java/` to match your `mod.group` and `mod.id`.
 
 #### 6. **Update resource files**
@@ -128,8 +128,8 @@ Be careful to run the correct task for the selected Stonecutter platform and Min
 
 The template uses a platform abstraction pattern to keep shared code loader-agnostic:
 
-* **Shared code** goes in `com.example.modtemplate` (no platform dependencies)
-* **Platform-specific code** goes in `com.example.modtemplate.platform.{fabric|neoforge|forge}`
+* **Shared code** goes in `cn.scarefree.openlink2` (no platform dependencies)
+* **Platform-specific code** goes in `cn.scarefree.openlink2.platform.{fabric|neoforge|forge}`
 * The `Platform` interface provides loader-specific functionality to shared code
 
 ### Adding Dependencies
