@@ -22,6 +22,10 @@ platform {
 		required("forge") {
 			forgeLikeVersionRange.set("[1,)")
 		}
+		required("apricityui") {
+			slug("apricityui")
+			forgeLikeVersionRange = "[${prop("deps.apricityui")},)"
+		}
 	}
 }
 
@@ -69,6 +73,7 @@ repositories {
 dependencies {
 	annotationProcessor("org.spongepowered:mixin:${libs.versions.mixin.get()}:processor")
 
+	implementation("maven.modrinth:apricityui:${prop("deps.apricityuimrvid")}")
 	implementation(libs.moulberry.mixinconstraints)
 	jarJar(libs.moulberry.mixinconstraints)
 }

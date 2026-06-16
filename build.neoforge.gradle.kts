@@ -22,6 +22,10 @@ platform {
 		required("neoforge") {
 			forgeLikeVersionRange.set("[1,)")
 		}
+		required("apricityui") {
+			slug("apricityui")
+			forgeLikeVersionRange = "[${prop("deps.apricityui")},)"
+		}
 	}
 }
 
@@ -66,6 +70,7 @@ repositories {
 dependencies {
 	implementation(libs.moulberry.mixinconstraints)
 	jarJar(libs.moulberry.mixinconstraints)
+	implementation("maven.modrinth:apricityui:${prop("deps.apricityuimrvid")}")
 }
 
 tasks.named("createMinecraftArtifacts") {
