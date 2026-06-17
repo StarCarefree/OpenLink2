@@ -30,6 +30,7 @@ platform {
 			fabricLikeVersionRange = ">=${prop("deps.fabric-loader")}"
 		}
 		optional("modmenu") {}
+		optional("apricityui") {}//暂时没有办法
 	}
 }
 
@@ -63,6 +64,7 @@ repositories {
 	mavenCentral()
 	strictMaven("https://maven.terraformersmc.com/", "com.terraformersmc") { name = "TerraformersMC" }
 	strictMaven("https://api.modrinth.com/maven", "maven.modrinth") { name = "Modrinth" }
+	strictMaven("https://maven.sighs.cc/repository/maven-releases/", "com.sighs", "cc.sighs.oelib") { name = "Tower of Sighs" }
 }
 
 configurations.all {
@@ -83,4 +85,8 @@ dependencies {
 	include(libs.moulberry.mixinconstraints)
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
 	modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}")
+	if (prop("deps.minecraft") == "1.20.1") {
+		modImplementation("com.sighs:apricityui-fabric-1.20.1:1.0.4.1")
+		include("com.sighs:apricityui-fabric-1.20.1:1.0.4.1")
+	}
 }
