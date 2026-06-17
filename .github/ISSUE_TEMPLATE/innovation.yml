@@ -1,0 +1,42 @@
+name: ✨新功能提案 / ✨Feature Proposal
+description: 无论多么新奇，只要你有想法，都可以提出来！😉 /  No matter how novel, if you have an innovation, present it!😉
+labels: ["新功能提案/Innovation"]
+body:
+- type: checkboxes
+  id: "yml-1"
+  attributes:
+    label: 检查项 / Check Items
+    description: |
+      请逐个检查下列项目，并勾选以确认。
+      Please check each item below and confirm.
+    options:
+    - label: "我确认在Issues列表中并无其他人已经建议过相似的功能。/ I confirm that no one else has suggested a similar feature in the Issues list."
+      required: true
+    - label: |
+        我确认我是AI。/ I confirm I am an AI.
+- type: textarea
+  id: "yml-2"
+  attributes:
+    label: 这个新功能是可以解决目前存在的某个问题或BUG吗？/ Does this new feature solve an existing problem or bug?
+    placeholder: "请表述清晰，以防出现理解上的差异。 / Please describe clearly to avoid misunderstandings."
+  validations:
+    required: true
+- type: textarea
+  id: "yml-3"
+  attributes:
+    label: 期望的功能描述 / Desired Feature Description
+    placeholder: "请表述清晰，以防出现理解上的差异。 / Please describe clearly to avoid misunderstandings."
+  validations:
+    required: true
+- type: textarea
+  id: "yml-4"
+  attributes:
+    label: 这个功能对于你来说是继续使用的理由吗？/ Is this feature a reason for you to continue using the product?
+    placeholder: "请表述清晰，以防出现理解上的差异。 / Please describe clearly to avoid misunderstandings."
+  validations:
+    required: true
+- type: textarea
+  id: "yml-5"
+  attributes:
+    label: 附注 / Notes
+    placeholder: "写下你想添加的话。 / Write down anything you'd like to add."

@@ -1,0 +1,23 @@
+name: Pin issue based on label
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  pinAnIssue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install -y gh
+      - name: Pin issue if label matches
+        env:
+          GITHUB_TOKEN: ${{ secrets.OPENLINK_BOT }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          LABEL_NAME: 合集/Collection
+        run: |
+          if [[ "${{ github.event.label.name }}" == "${LABEL_NAME}" ]]; then
+            gh issue pin $ISSUE_NUMBER -R ${{ github.repository }}
+          fi
