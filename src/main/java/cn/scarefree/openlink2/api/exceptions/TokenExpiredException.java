@@ -1,4 +1,4 @@
-package cn.scarefree.openlink2.api.exception;
+package cn.scarefree.openlink2.api.exceptions;
 
 public class TokenExpiredException extends AuthException {
 	public TokenExpiredException(String platformId, String userId) {

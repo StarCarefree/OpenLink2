@@ -1,9 +1,17 @@
 package cn.scarefree.openlink2.api.account;
 
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 
 public interface AccountManager {
+	/**
+	 * @return 获取实例
+	 */
+	static AccountManager getAccountManager() {
+		return ServiceLoader.load(AccountManager.class).findFirst().get();
+	}
+
 	/**
 	 * 注册一个平台提供者（Mod 初始化时调用）
 	 */

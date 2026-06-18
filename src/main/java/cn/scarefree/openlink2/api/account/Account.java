@@ -33,7 +33,14 @@ public interface Account {
 	/**
 	 * @return 判断凭据是否已过期
 	 */
-	boolean isExpired();
+	default boolean isExpired() {
+		return System.currentTimeMillis() >= getExpiresAt();
+	}
+
+	/**
+	 * @return 获取过期时间
+	 */
+	long getExpiresAt();
 
 	/**
 	 * 获取访问令牌，仅限内部使用，不对外暴露修改能力。

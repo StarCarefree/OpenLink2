@@ -16,8 +16,8 @@
       - [x] TokenExpiredException(exception)  – 令牌过期专用异常
   - impl
     - account
-      - [ ] AccountManagerImpl
-      - [ ] JsonAccountStore
+      - [x] AccountImpl
+      - [x] AccountManagerImpl
+      - [x] JsonAccountStore
       - [ ] NatayarkIdAccountPlatform
       - [ ] ELinkAccountPlatform - 不知道能不能做
-      - ...(加密工具类、令牌刷新助手等)
