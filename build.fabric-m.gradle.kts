@@ -72,4 +72,6 @@ dependencies {
 	include(libs.moulberry.mixinconstraints)
 	implementation("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
 	localRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}")
+	compileOnly(libs.lombok)
+	annotationProcessor(libs.lombok)
 }

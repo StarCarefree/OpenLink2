@@ -24,7 +24,7 @@ body:
 - type: textarea
   id: "yml-3"
   attributes:
-    label: 期望的功能描述 / Desired Feature Description
+    label: 期望的功能的描述 / Desired Feature Description
     placeholder: "请表述清晰，以防出现理解上的差异。 / Please describe clearly to avoid misunderstandings."
   validations:
     required: true

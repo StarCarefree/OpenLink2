@@ -89,4 +89,6 @@ dependencies {
 		modImplementation("com.sighs:apricityui-fabric-1.20.1:1.0.4.1")
 		include("com.sighs:apricityui-fabric-1.20.1:1.0.4.1")
 	}
+	compileOnly(libs.lombok)
+	annotationProcessor(libs.lombok)
 }

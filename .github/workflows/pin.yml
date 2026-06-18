@@ -16,7 +16,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.OPENLINK_BOT }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          LABEL_NAME: 合集/Collection
+          LABEL_NAME: PIN
         run: |
           if [[ "${{ github.event.label.name }}" == "${LABEL_NAME}" ]]; then
             gh issue pin $ISSUE_NUMBER -R ${{ github.repository }}

@@ -67,6 +67,6 @@ body:
   id: "yml-9"
   attributes:
     label: 附注 / Notes
-    placeholder: "写下你想添加的话或Crash等日志文件 / Write down anything you'd like to add or Crash logs, etc."
+    placeholder: "写下你想添加的话或上传Crash等日志文件。 / Write down anything you'd like to add or submit Crash logs."
   validations:
     required: false
