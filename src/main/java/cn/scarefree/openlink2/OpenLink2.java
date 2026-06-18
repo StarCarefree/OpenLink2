@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 /*import cn.scarefree.openlink2.platform.neoforge.NeoforgePlatform;
  *///?} forge {
 import cn.scarefree.openlink2.platform.forge.ForgePlatform;
-	//?}
+//?}
 import javax.crypto.SecretKey;
 import java.nio.file.Path;
 import java.nio.file.Paths;

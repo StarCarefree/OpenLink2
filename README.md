@@ -1,220 +1,29 @@
-# Stonecutter Mod Template
+# OpenLink 2
 
-A multi-platform Minecraft mod template for **Fabric**, **NeoForge**, and **Forge**,
-using [Stonecutter](https://stonecutter.kikugie.dev/) for
-multiversion and multiloader code.
-This is the Java-only version adapted from KikuGie's Elytra Trims
-rewrite following major Stonecutter feature updates.
+A multiplayer mod project that is not finished yet.
 
-This template is as "batteries included" as possible.
-If you don't like this, it's not the right template for
-you ([Alternative Templates](https://stonecutter.kikugie.dev/wiki/tips/multiloader)).
+## TODO
 
-## Features
-
-* Single codebase for Fabric, NeoForge, and Forge
-* Single codebase for multiple Minecraft versions
-* CI/CD with GitHub Actions for automated builds and releases
-* Separate build scripts for each platform
-
-## Getting Started
-
-### Prerequisites
-
-* Knowledge of Fabric, NeoForge, and/or Forge
-* Suitable IDE
-* Java 25 or higher
-* Git
-
-### Initial Setup
-
-#### 1. **Clone or use this template**
-
-```bash
-git clone https://github.com/rotgruengelb/stonecutter-mod-template.git
-cd stonecutter-mod-template
-```
-
-#### 2. **Open in your IDE**
-
-Import the project as a Gradle project
-in your preferred IDE (e.g., IntelliJ IDEA, Eclipse).
-
-#### 3. **Stonecutter IntelliJ plugin**
-
-The IntelliJ plugin adds comment syntax highlighting and completion,
-a button to switch the active version, alongside other utilities.
-
-
-
-#### 4. **Configure your mod**
-
-Edit `stonecutter.properties.toml` to set your mod's metadata:
-
-| Property               | Description                                  | Example                                                           |
-|------------------------|----------------------------------------------|-------------------------------------------------------------------|
-| `mod.id`               | Your mod's identifier (lowercase, no spaces) | `modtemplate`                                                     |
-| `mod.name`             | Display name of your mod                     | `Mod Template`                                                    |
-| `mod.group`            | Java package group                           | `com.example`                                                     |
-| `mod.version`          | Mod version number                           | `0.1.0`                                                           |
-| `mod.channel_tag`      | Optional release channel tag                 | `-alpha.0`                                                        |
-| `mod.authors`          | Name of the author(s), as a TOML array       | `["AuthorName"]`                                                  |
-| `mod.contributors`     | Contributor names, as a TOML array           | `["ContributorName", "AnotherContributorName"]`                   |
-| `mod.license.name`     | License type                                 | `MIT`                                                             |
-| `mod.description`      | Short mod description                        | `Example Description`                                             |
-| `mod.sources_url`      | Link to your source code repository          | `https://github.com/rotgruengelb/stonecutter-mod-template`        |
-| `mod.homepage_url`     | Mod homepage or info page                    | `https://github.com/rotgruengelb/stonecutter-mod-template`        |
-| `mod.issues_url`       | Link to issue tracker                        | `https://github.com/rotgruengelb/stonecutter-mod-template/issues` |
-| `mod.discord_url`      | Link to a Discord invite                     | `https://discord.gg/aunYJB4wz9`                                   |
-
-Dependencies and properties that are specific to a version/loader
-are defined in `stonecutter.properties.toml` under their respective `[loader."version"]` table,
-e.g. `[fabric."1.21.7"]`.
-
-#### 5. **Rename package structure**
-
-Rename the `cn.scarefree.openlink2` package in
-`src/main/java/` to match your `mod.group` and `mod.id`.
-
-#### 6. **Update resource files**
-
-Rename these files to match your `mod.id`:
-
-* `src/main/resources/modtemplate.mixins.json`
-
-Replace `src/main/resources/assets/icon.png` and `.idea/icon.png` with your mod's icon.
-
-## Development
-
-### Stonecutter
-
-[Stonecutter](https://stonecutter.kikugie.dev/) allows multiple Minecraft versions and loaders in a single codebase.
-Configure Stonecutter in `stonecutter.gradle.kts` and `settings.gradle.kts`.
-
-Example of platform-specific code using Stonecutter comments:
-
-```java
-//? fabric {
-fabricOnlyCode();
-//?} else {
-/*neoforgeOnlyCode();*/
-//?}
-```
-
-Version-specific code works similarly:
-
-```java
-//? 1.21.7 {
-LOGGER.info("hello 1.21.7!");
-//?} else {
-/*LOGGER.info("hello from any other version!");
- *///?}
-```
-
-For more details, read the [Stonecutter documentation](https://stonecutter.kikugie.dev/wiki/).
-
-### Access Wideners/Transformers
-
-* Fabric Access Wideners: `src/main/resources/aw/*.accesswidener` (one per supported Minecraft version)
-* (Neo)Forge Access Transformers: `src/main/resources/aw/*.cfg` (one per supported Minecraft version)
-
-### Running in Development
-
-The Gradle plugins of the respective platform should provide run configurations.
-If not, you can run the server and client with the respective Gradle tasks.
-Be careful to run the correct task for the selected Stonecutter platform and Minecraft version.
-
-### Platform Abstraction
-
-The template uses a platform abstraction pattern to keep shared code loader-agnostic:
-
-* **Shared code** goes in `cn.scarefree.openlink2` (no platform dependencies)
-* **Platform-specific code** goes in `cn.scarefree.openlink2.platform.{fabric|neoforge|forge}`
-* The `Platform` interface provides loader-specific functionality to shared code
-
-### Adding Dependencies
-
-To add dependencies for a specific platform, modify the `platform` block in the respective `build.gradle.kts` file.
-The declared dependencies are automatically added to the metadata file for the loader and when publishing the mod to
-mod hosting platforms.
-**Important:** This does not replace the `dependencies` block!
-
-```kotlin
-platform {
-  loader = "fabric" // or "neoforge" / "forge"
-  dependencies {
-    required("my-lib") {
-      slug("my-lib") // Mod hosting platform slug (here the slug is the same on both Modrinth and CurseForge)
-      versionRange = ">=${prop("deps.my-lib")}" // version range (for fabric.mod.json)
-      forgeVersionRange =
-        "[${prop("deps.my-lib")},)" // version range (for neoforge mods.toml), uses Maven version range syntax
-    }
-  }
-}
-```
-
-### Data Generation
-
-Run Fabric data generation to create recipes, tags, and other data:
-
-```bash
-./gradlew :1.21.7-fabric:runDatagen
-```
-
-Generated files appear in `versions/datagen/{mc_version}/src/main/generated/`.
-The current setup uses Fabric data generation for all platforms to keep everything consistent.
-
-### Environment Variables
-
-The template uses environment variables for publishing configuration. If you want to publish manually on your machine
-Copy `.env.template` to `.env` and fill in the values. The `.env` file is loaded automatically by the `dotenv-gradle` plugin.
-If you want to use the CI (here GitHub Actions), fill in the corresponding secrets in the repository configuration.
-
-| Variable                      | Description                                                                |
-|-------------------------------|----------------------------------------------------------------------------|
-| `MOD_IS_RELEASE`              | Set to `true` to mark the build as a release (removes `-SNAPSHOT` suffix)  |
-| `PUB_DRY_RUN`                 | Set to `true` to simulate publishing without actually uploading            |
-| `PUB_MAVEN_ENABLE`            | Set to `true` to enable Maven Central publishing                           |
-| `PUB_MODS_ENABLE`             | Set to `true` to enable publishing to Modrinth and CurseForge              |
-| `PUB_MODRINTH_TOKEN`          | Your Modrinth personal access token                                        |
-| `PUB_CURSEFORGE_TOKEN`        | Your CurseForge API token                                                  |
-| `PUB_MODRINTH_STAGING`        | Set to `true` to publish to the Modrinth staging API instead of production |
-| `PUB_CURSEFORGE_PROJECT_ID`   | Your CurseForge project ID                                                 |
-| `PUB_MODRINTH_PROJECT_ID`     | Your Modrinth project ID                                                   |
-| `PUB_MAVEN_CENTRAL_ENABLE`    | Set to `true` to publish to Maven Central                                  |
-| `PUB_MAVEN_CENTRAL_SNAPSHOTS` | Set to `true` to also publish snapshot versions to Maven Central           |
-| `PUB_MAVEN_CENTRAL_USERNAME`  | Your Maven Central (Sonatype) username                                     |
-| `PUB_MAVEN_CENTRAL_PASSWORD`  | Your Maven Central (Sonatype) password                                     |
-| `PUB_SIGNING_KEY`             | ASCII-armored PGP private key for artifact signing                         |
-| `PUB_SIGNING_ID`              | PGP key ID                                                                 |
-| `PUB_SIGNING_PASSWORD`        | Passphrase for the PGP signing key                                         |
-
-## Resources and Links
-- [Stonecutter Documentation](https://stonecutter.kikugie.dev/wiki/)
-- [NeoForge Documentation](https://docs.neoforged.net/docs/gettingstarted/)
-- [Fabric Documentation](https://docs.fabricmc.net/develop/)
-- [Pre-commit](https://pre-commit.com/)
-- [Git Source Control](https://git-scm.com/doc)
-- [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-- [Semantic Versioning](https://semver.org/)
-  - [How to denote a pre-release version](https://semver.org/#spec-item-9)
-- [Your Modrinth PAT](https://modrinth.com/settings/pats)
-- [Your CurseForge API Tokens](https://legacy.curseforge.com/account/api-tokens)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Gradle Documentation](https://docs.gradle.org/current/userguide/userguide.html)
-
-### Help and Support
-For help and support, consider the following places:
-- ["Kiku's Realm" Discord Server](https://discord.kikugie.dev/) for Stonecutter-related questions.
-- ["Cascading Colors" (My) Discord Server](https://discord.gg/aunYJB4wz9) for questions about this template and its setup.
-- ["The NeoForge Project" Discord Server](https://github.com/neoforged) for NeoForge-related questions.
-- ["The Fabric Project" Discord Server](https://discord.gg/v6v4pMv) for Fabric-related questions.
-
-## License/Credits
-
-This template is provided under the MIT License.
-Check `LICENSE` for details.
-
-* Based on [murderspagurder/mod-template-java](https://github.com/murderspagurder/mod-template-java)
-  * Adapted from [KikuGie's Elytra Trims](https://github.com/kikugie/elytra-trims) setup
-* Uses [Stonecutter](https://stonecutter.kikugie.dev/) by KikuGie
+- cn.scarefree.openlink2
+  - mixin(used when needed)
+  - platform(template)
+  - api
+    - account
+      - [x] Account(interface)  – 统一账号模型，封装平台标识、平台用户ID、显示名、邮箱、头像、令牌与过期时间
+      - [x] AccountManager(interface)  – 对外统一门面，提供绑定、解绑、刷新、查询所有平台账号的方法
+      - [x] AccountPlatform(interface)  – 平台认证适配器接口，定义启动登录、完成登录、令牌刷新、有效性检查
+      - [x] AccountStore(interface)  – 本地加密持久化存储接口，负责账号的增、删、改、查与加密保护
+      - [x] LoginRequestInfo(class)  – 描述登录下一步操作的纯数据对象，含流程类型、URL、用户码、轮询间隔、内部状态
+      - [x] LoginFlowType(enum)  – BROWSER_OAUTH / DEVICE_CODE / CREDENTIALS
+      - [x] AuthException(exception)  – 通用认证异常
+      - [x] PlatformNotSupportedException(exception)  – 平台未注册异常
+      - [x] TokenExpiredException(exception)  – 令牌过期专用异常
+    - multiplayer_method
+  - impl
+    - account
+      - [x] AccountImpl
+      - [x] AccountManagerImpl
+      - [x] JsonAccountStore
+      - [ ] NatayarkIdAccountPlatform
+      - [ ] ELinkAccountPlatform - 不知道能不能做
+  - gui
