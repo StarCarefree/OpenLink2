@@ -18,7 +18,7 @@ A multiplayer mod project that is not finished yet.
       - [x] AuthException(exception)  – 通用认证异常
       - [x] PlatformNotSupportedException(exception)  – 平台未注册异常
       - [x] TokenExpiredException(exception)  – 令牌过期专用异常
-    - multiplayer_method
+    - multiplayer
   - impl
     - account
       - [x] AccountImpl

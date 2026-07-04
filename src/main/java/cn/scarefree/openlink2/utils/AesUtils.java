@@ -40,7 +40,6 @@ public class AesUtils {
 		GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
 		cipher.init(Cipher.ENCRYPT_MODE, key, spec);
 		byte[] ciphertext = cipher.doFinal(plaintext);
-		// 将 IV 前置到密文
 		byte[] combined = new byte[iv.length + ciphertext.length];
 		System.arraycopy(iv, 0, combined, 0, iv.length);
 		System.arraycopy(ciphertext, 0, combined, iv.length, ciphertext.length);
