@@ -23,24 +23,15 @@ public class JsonAccountStore implements AccountStore {
 	private final Path accountsDir;
 	private final SecretKey aesKey;
 
-	/**
-	 * 创建使用默认目录的存储实例。
-	 */
 	public JsonAccountStore() {
 		this(getAccountsPath(), OpenLink2.AES_KEY);
 	}
 
-	/**
-	 * 创建使用指定目录的存储实例。
-	 */
 	public JsonAccountStore(Path accountsDir, SecretKey aesKey) {
 		this.accountsDir = accountsDir;
 		this.aesKey = aesKey;
 	}
 
-	/**
-	 * 获取accounts目录
-	 */
 	public static Path getAccountsPath() {
 		return OpenLink2.STORAGE_PATH.resolve("accounts");
 	}
@@ -76,6 +67,7 @@ public class JsonAccountStore implements AccountStore {
 		try {
 			byte[] encrypted = Files.readAllBytes(file);
 			byte[] decrypted = AesUtils.decrypt(encrypted, aesKey);
+			//TODO: do something if AES KEY is wrong
 			return new String(decrypted, StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			throw new IOException("Decryption failed", e);

@@ -33,6 +33,12 @@ public class LoginRequestInfo {
 	 * {@link LoginFlowType#DEVICE_CODE}使用的轮询间隔的秒数
 	 */
 	private int intervalSeconds;
+	/**
+	 * 过期时间
+	 */
 	private int expiresIn;
-	private Map<String, Object> internalState;   // 内部状态传递
+	/**
+	 * 内部传递用信息（自行传递，OpenLink2不干涉）
+	 */
+	private Map<String, Object> internalState;
 }

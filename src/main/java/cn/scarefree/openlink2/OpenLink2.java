@@ -21,9 +21,9 @@ import java.nio.file.Paths;
 @SuppressWarnings("LoggingSimilarMessage")
 public class OpenLink2 {
 
-	public static final String MOD_ID = /*$ mod_id*/ "SWAPPED";
-	public static final String MOD_VERSION = /*$ mod_version*/ "SWAPPED";
-	public static final String MOD_FRIENDLY_NAME = /*$ mod_name*/ "SWAPPED";
+	public static final String MOD_ID = /*$ mod_id*/ "openlink2";
+	public static final String MOD_VERSION = /*$ mod_version*/ "0.1.0";
+	public static final String MOD_FRIENDLY_NAME = /*$ mod_name*/ "OpenLink 2";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public static final Path STORAGE_PATH = getStoragePath();
 	public static final SecretKey AES_KEY = AesUtils.deriveKeyFromMachine();

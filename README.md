@@ -9,21 +9,25 @@ A multiplayer mod project that is not finished yet.
   - platform(template)
   - api
     - account
-      - [x] Account(interface)  – 统一账号模型，封装平台标识、平台用户ID、显示名、邮箱、头像、令牌与过期时间
-      - [x] AccountManager(interface)  – 对外统一门面，提供绑定、解绑、刷新、查询所有平台账号的方法
-      - [x] AccountPlatform(interface)  – 平台认证适配器接口，定义启动登录、完成登录、令牌刷新、有效性检查
-      - [x] AccountStore(interface)  – 本地加密持久化存储接口，负责账号的增、删、改、查与加密保护
-      - [x] LoginRequestInfo(class)  – 描述登录下一步操作的纯数据对象，含流程类型、URL、用户码、轮询间隔、内部状态
-      - [x] LoginFlowType(enum)  – BROWSER_OAUTH / DEVICE_CODE / CREDENTIALS
-      - [x] AuthException(exception)  – 通用认证异常
-      - [x] PlatformNotSupportedException(exception)  – 平台未注册异常
-      - [x] TokenExpiredException(exception)  – 令牌过期专用异常
+      - [x] Account(interface)
+      - [x] AccountManager(interface)
+      - [x] AccountPlatform(interface)
+      - [x] AccountStore(interface)
+      - [x] LoginRequestInfo(class)
+      - [x] LoginFlowType(enum)
+      - [x] AuthException(exception)
+      - [x] PlatformNotSupportedException(exception)
+      - [x] TokenExpiredException(exception)
     - multiplayer
+      - [ ] MultiplayerSettings(interface) - just a interface to get/set all the settings, could be got in MultiplayerService
+      - [ ] MultiplayerService<T extends AccountPlatform>(interface) - could be used with a AccountPlatform or Void.
+      - [ ] MultiplayerManager(interface)
   - impl
     - account
       - [x] AccountImpl
       - [x] AccountManagerImpl
-      - [x] JsonAccountStore
+      - [x] JsonAccountStore - temp usage, will be replaced
       - [ ] NatayarkIdAccountPlatform
-      - [ ] ELinkAccountPlatform - 不知道能不能做
+      - [ ] ELinkAccountPlatform - unknown
+    - multiplayer
   - gui

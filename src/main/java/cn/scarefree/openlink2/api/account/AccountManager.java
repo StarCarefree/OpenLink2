@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 
+import static cn.scarefree.openlink2.api.account.PACKAGE_CONST.MANAGER_CLASS_NAME;
+
 public interface AccountManager {
 	/**
 	 * @return 获取实例
 	 */
 	static AccountManager getAccountManager() {
-		return ServiceLoader.load(AccountManager.class).findFirst().get();
+		return ServiceLoader.load(AccountManager.class).stream().filter(accountManagerProvider -> accountManagerProvider.type().getName().equals(MANAGER_CLASS_NAME)).findFirst().get().get();
 	}
 
 	/**

@@ -14,7 +14,7 @@ jobs:
           sudo apt install -y gh
       - name: Pin issue if label matches
         env:
-          GITHUB_TOKEN: ${{ secrets.OPENLINK_BOT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           LABEL_NAME: PIN
         run: |
