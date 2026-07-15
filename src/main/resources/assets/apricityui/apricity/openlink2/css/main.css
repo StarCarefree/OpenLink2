@@ -1,0 +1,56 @@
+body>div {
+    display: flex;
+    position: relative;
+}
+.area {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    padding: 5px 10px;
+    box-sizing: border-box;
+    height: 180px;
+    width: 350px;
+    overflow: hidden;
+}
+.head {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 5px;
+    z-index: 0;
+}
+.scroll-list {
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+.panel {
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.button {
+    width: 100%;
+    display: flex;
+    box-sizing: border-box;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+}
+ul {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+li {
+    width: 100%;
+}
+span {
+    color: rgb(69 55 102);
+}
