@@ -19,15 +19,16 @@ A multiplayer mod project that is not finished yet.
       - [x] PlatformNotSupportedException(exception)
       - [x] TokenExpiredException(exception)
     - multiplayer
-      - [ ] MultiplayerSettings(interface) - just a interface to get/set all the settings, could be got in MultiplayerService
+      - [ ] MultiplayerSettings(interface) - just an interface to get/set all the settings, could be got in MultiplayerService
       - [ ] MultiplayerService<T extends AccountPlatform>(interface) - could be used with a AccountPlatform or Void.
       - [ ] MultiplayerManager(interface)
   - impl
     - account
       - [x] AccountImpl
       - [x] AccountManagerImpl
-      - [x] JsonAccountStore - temp usage, will be replaced
+      - [x] JsonAccountStore - temp usage, will be replaced(maybe)
       - [ ] NatayarkIdAccountPlatform
       - [ ] ELinkAccountPlatform - unknown
     - multiplayer
   - gui
+  - logic
