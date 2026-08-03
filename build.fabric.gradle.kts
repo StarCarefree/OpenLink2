@@ -1,6 +1,6 @@
 plugins {
 	id("mod-platform")
-	id("net.fabricmc.fabric-loom-remap")
+	id("dev.kikugie.loom-back-compat")
 }
 
 stonecutter {
@@ -17,7 +17,7 @@ stonecutter {
 }
 
 platform {
-	loader = "fabric-o"
+	loader = "fabric"
 	dependencies {
 		required("minecraft") {
 			fabricLikeVersionRange = prop("deps.minecraft")
@@ -75,11 +75,13 @@ configurations.all {
 
 dependencies {
 	minecraft("com.mojang:minecraft:${prop("deps.minecraft")}")
-	mappings(
-		loom.layered {
+	if (sc.current.parsed < "26") {
+		mappings(loom.layered {
 			officialMojangMappings()
-			if (hasProperty("deps.parchment")) parchment("org.parchmentmc.data:parchment-${prop("deps.parchment")}@zip")
+			if (hasProperty("deps.parchment"))
+				parchment("org.parchmentmc.data:parchment-${prop("deps.parchment")}@zip")
 		})
+	}
 	modImplementation("net.fabricmc:fabric-loader:${prop("deps.fabric-loader")}")
 	implementation(libs.moulberry.mixinconstraints)
 	include(libs.moulberry.mixinconstraints)

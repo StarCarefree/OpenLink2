@@ -8,18 +8,19 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
-import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.internal.extensions.stdlib.toDefaultLowerCase
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.*
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.plugins.ide.idea.model.IdeaModel
+import java.util.Properties
 import javax.inject.Inject
 
 val Project.sc: StonecutterBuildExtension
@@ -28,8 +29,12 @@ val Project.sc: StonecutterBuildExtension
 @OptIn(StonecutterExperimentalAPI::class)
 fun Project.prop(name: String): String = (project.sc.properties.get<String>(name))
 
-fun Project.env(variable: String): String? = providers.environmentVariable(variable).orNull
-
+fun Project.env(variable: String): String? {
+	providers.environmentVariable(variable).orNull?.let { return it }
+	return rootProject.file(".env").takeIf { it.exists() }?.let { f ->
+		Properties().apply { f.inputStream().use(::load) }.getProperty(variable)
+	}
+}
 fun Project.envTrue(variable: String): Boolean = env(variable)?.toDefaultLowerCase() == "true"
 
 fun RepositoryHandler.strictMaven(
@@ -41,17 +46,14 @@ fun RepositoryHandler.strictMaven(
 
 abstract class GenerateModManifestTask : DefaultTask() {
 	@get:Input
-	abstract val manifestPath: Property<String>
-
-	@get:Input
 	abstract val content: Property<String>
 
-	@get:OutputDirectory
-	abstract val outputDir: DirectoryProperty
+	@get:OutputFile
+	abstract val outputFile: RegularFileProperty
 
 	@TaskAction
 	fun generate() {
-		val file = outputDir.get().asFile.resolve(manifestPath.get())
+		val file = outputFile.get().asFile
 		file.parentFile.mkdirs()
 		file.writeText(content.get())
 	}
@@ -63,8 +65,25 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 
 		val extension = extensions.create("platform", ModPlatformExtension::class.java).apply {
 			loader.convention(inferredLoader.id)
-			jarTask.convention(inferredLoader.jarTask)
-			sourcesJarTask.convention(inferredLoader.sourcesJarTask)
+		}
+
+		when (inferredLoader) {
+			is Loader.Fabric -> {
+				extension.jarTask.convention(providers.provider {
+					extensions.getByType<dev.kikugie.loomx.LoomCompatProjectExtension>().modJar.name
+				})
+				extension.sourcesJarTask.convention(providers.provider {
+					extensions.getByType<dev.kikugie.loomx.LoomCompatProjectExtension>().modSourcesJar.name
+				})
+			}
+			is Loader.Forge -> {
+				extension.jarTask.convention("reobfJar")
+				extension.sourcesJarTask.convention("sourcesJar")
+			}
+			else -> {
+				extension.jarTask.convention("jar")
+				extension.sourcesJarTask.convention("sourcesJar")
+			}
 		}
 
 		listOf("org.jetbrains.kotlin.jvm", "com.google.devtools.ksp", "dev.kikugie.fletching-table").forEach {
@@ -121,24 +140,16 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 	}
 
 	private fun Project.registerGenerateManifestTask(ctx: Context) {
-
 		val manifestOutputDir = layout.buildDirectory.dir("generated/modManifest")
 		val generateTask = tasks.register<GenerateModManifestTask>("generateModManifest") {
-			manifestPath.set(ctx.loader.modManifestPath)
 			content.set(ctx.loader.generateManifest(ctx))
-			outputDir.set(manifestOutputDir)
+			outputFile.set(layout.buildDirectory.file("generated/modManifest/${ctx.loader.modManifestPath}"))
 		}
 
 		the<JavaPluginExtension>().sourceSets.named("main") { resources.srcDir(manifestOutputDir) }
 		tasks.named<ProcessResources>("processResources") { dependsOn(generateTask) }
-		tasks.withType<Jar>().configureEach {
-			if (name == ctx.loader.sourcesJarTask) {
-				dependsOn(generateTask)
-			}
-		}
 	}
 
-	@Suppress("UnstableApiUsage")
 	private fun Project.configureProcessResources(ctx: Context) {
 		tasks.named<ProcessResources>("processResources") {
 			dependsOn(tasks.named("stonecutterGenerate"), "kspKotlin")
@@ -185,6 +196,7 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 			)
 			into(rootProject.layout.buildDirectory.file("libs/${ctx.basicVersion}"))
 			dependsOn("build")
+			group = "build"
 		}
 	}
 }

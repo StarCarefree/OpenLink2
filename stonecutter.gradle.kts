@@ -2,9 +2,7 @@
 
 plugins {
 	alias(libs.plugins.stonecutter)
-	alias(libs.plugins.dotenv)
-	alias(libs.plugins.fabric.loom).apply(false)
-	alias(libs.plugins.fabric.loom.remap).apply(false)
+	alias(libs.plugins.loom.back.compat).apply(false)
 	alias(libs.plugins.neoforged.moddev).apply(false)
 	alias(libs.plugins.jsonlang.postprocess).apply(false)
 	alias(libs.plugins.mod.publish.plugin).apply(false)
@@ -15,25 +13,6 @@ plugins {
 }
 
 stonecutter active file(".sc_active_version")
-
-for (version in stonecutter.versions.map { it.version }.distinct()) tasks.register("publish$version") {
-	group = "publishing"
-	dependsOn(stonecutter.tasks.named("publishMods") { metadata.version == version })
-}
-
-stonecutter tasks {
-	val ordering = versionComparator.thenComparingInt { task ->
-		if (task.metadata.project.endsWith("fabric")) 1 else 0
-	}
-
-	listOf("publishModrinth", "publishCurseforge").forEach { taskName ->
-		gradle.allprojects {
-			if (project.tasks.findByName(taskName) != null) {
-				order(taskName, ordering)
-			}
-		}
-	}
-}
 
 tasks.register("runActiveClient") {
 	group = "stonecutter"
@@ -48,12 +27,16 @@ tasks.register("runActiveServer") {
 }
 
 stonecutter parameters {
-	constants.match(node.metadata.project.substringAfterLast('-'), "fabric", "neoforge", "forge")
-	filters.include("**/*.fsh", "**/*.vsh")
-	swaps["mod_version"] = "\"${sc.properties.get<String>("mod.version")}\";"
-	swaps["mod_id"] = "\"${sc.properties.get<String>("mod.id")}\";"
-	swaps["mod_name"] = "\"${sc.properties.get<String>("mod.name")}\";"
-	swaps["mod_group"] = "\"${sc.properties.get<String>("mod.group")}\";"
-	swaps["minecraft"] = "\"${node.metadata.version}\";"
-	constants["release"] = sc.properties.get<String>("mod.id") != "modtemplate"
+	constants.match(current.project.substringAfterLast('-'), "fabric", "neoforge", "forge")
+	swaps["mod_version"] = "\"${properties.get<String>("mod.version")}\";"
+	swaps["mod_id"] = "\"${properties.get<String>("mod.id")}\";"
+	swaps["mod_name"] = "\"${properties.get<String>("mod.name")}\";"
+	swaps["mod_group"] = "\"${properties.get<String>("mod.group")}\";"
+	swaps["minecraft"] = "\"${current.version}\";"
+	constants["release"] = properties.get<String>("mod.id") != "modtemplate"
+}
+
+for (version in stonecutter.versions.map { it.version }.distinct()) tasks.register("publish$version") {
+	group = "publishing"
+	dependsOn(stonecutter.tasks.named("publishMods") { metadata.version == version })
 }

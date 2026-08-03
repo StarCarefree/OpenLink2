@@ -1,3 +1,5 @@
+loomx.loom_version="1.16-SNAPSHOT"
+
 mod.id = "openlink2"
 mod.name = "OpenLink 2"
 mod.group = "cn.scarefree"
@@ -14,6 +16,7 @@ mod.sources_url = "https://github.com/StarCarefree/OpenLink2"
 mod.homepage_url = "https://github.com/StarCarefree/OpenLink2"
 mod.issues_url = "https://github.com/StarCarefree/OpenLink2/issues"
 mod.discord_url = ""
+mod.environment = "both"   #"client", "server", "both"
 [[mod.pom.developers]]
 id = "scarefree"
 name = "Star Carefree"
