@@ -68,8 +68,6 @@ repositories {
 }
 
 dependencies {
-	implementation(libs.moulberry.mixinconstraints)
-	jarJar(libs.moulberry.mixinconstraints)
 	implementation("maven.modrinth:apricityui:${prop("deps.apricityuimrvid")}")
 	jarJar("maven.modrinth:apricityui:${prop("deps.apricityuimrvid")}")
 	compileOnly(libs.lombok)
