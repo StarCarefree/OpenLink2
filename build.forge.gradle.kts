@@ -91,3 +91,9 @@ tasks.named("createMinecraftArtifacts") {
 	dependsOn(tasks.named("stonecutterGenerate"))
 }
 
+// Source files are UTF-8 (Chinese Javadoc comments); force UTF-8 so javadoc
+// doesn't fail under a non-UTF-8 platform encoding (e.g. GBK on Windows).
+tasks.withType<org.gradle.api.tasks.javadoc.Javadoc>().configureEach {
+	options.encoding = "UTF-8"
+}
+
