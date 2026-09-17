@@ -85,9 +85,9 @@ dependencies {
 	modImplementation("net.fabricmc:fabric-loader:${prop("deps.fabric-loader")}")
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
 	modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}")
-	if (prop("deps.minecraft") == "1.20.1") {
-		modImplementation("com.sighs:apricityui-fabric-1.20.1:1.0.4.1")
-		include("com.sighs:apricityui-fabric-1.20.1:1.0.4.1")
+	if (prop("deps.apricityui") != "null") {
+		modImplementation("maven.modrinth:apricityui:${prop("deps.apricityuimrvid")}")
+		include("maven.modrinth:apricityui:${prop("deps.apricityuimrvid")}")
 	}
 	compileOnly(libs.lombok)
 	annotationProcessor(libs.lombok)
