@@ -16,7 +16,7 @@ mod.sources_url = "https://github.com/StarCarefree/OpenLink2"
 mod.homepage_url = "https://github.com/StarCarefree/OpenLink2"
 mod.issues_url = "https://github.com/StarCarefree/OpenLink2/issues"
 mod.discord_url = ""
-mod.environment = "both"   #"client", "server", "both"
+mod.environment = "client_and_server"
 [[mod.pom.developers]]
 id = "scarefree"
 name = "Star Carefree"
@@ -43,7 +43,7 @@ deps.modmenu = "7.2.2"
 [fabric."1.21.1"]
 deps.minecraft = "1.21.1"
 deps.fabric-api = "0.116.7+1.21.1"
-deps.modmenu = "15.0.0"
+deps.modmenu = "11.0.4"
 
 [fabric."26.1.2"]
 deps.minecraft = "26.1.2"
