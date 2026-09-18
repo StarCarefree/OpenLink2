@@ -1,0 +1,305 @@
+/*
+ * OpenLink 2 — accountplatform Screen 布局层。
+ * 外观来自 Ore 主题（/apricityui/theme/ore/ore.css）；这里只负责 427×240 排布、
+ * 三态与双登录流切换，以及把 Ore 组件压到 GUI 尺寸。
+ * 页面是 viewport=browser，按普通浏览器布局写即可（flex + min-height:0）。
+ */
+
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+}
+
+body.ore-screen-host {
+	width: 100%;
+	height: 100%;
+	background: transparent;
+}
+
+/* 逻辑视口就是 427×240（mode=fixed），所以根容器直接铺满视口 */
+.ore-screen {
+	position: fixed;
+	left: 12.5%;
+	top: 12.5%;
+	width: 75%;
+	height: 75%;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background: var(--ore-canvas);
+	--font-sm: 26px;
+	--font-md: 30px;
+	--font-lg: 34px;
+	--font-xl: 44px;
+}
+
+/* ── 标题栏 ─────────────────────────────────────────────── */
+.screen-head {
+	flex: 0 0 auto;
+	padding: 4px 5px 4px 10px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ore-space-2);
+	border-bottom: 2px solid var(--ore-edge);
+	background: var(--ore-surface-deep);
+}
+
+.screen-title {
+	flex: 0 1 auto;
+	min-width: 0;
+	color: var(--ore-ink);
+	font-size: var(--ore-font-lg);
+	line-height: 1.2;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+/* Ore 的 .button 默认 width:100%（原版风格），标题栏里要锁成方形 */
+/* 权重必须高过后面的 .ore-screen .button（它带不对称 padding，会把 ✕ 顶偏） */
+.ore-screen .screen-head .button {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	min-width: 52px;
+	height: 52px;
+	min-height: 52px;
+	padding: 0;
+	line-height: 1;
+	font-size: var(--ore-font-lg);
+}
+
+/* ── 两栏主体 ───────────────────────────────────────────── */
+.screen-main {
+	flex: 1 1 auto;
+	min-height: 0;
+	display: flex;
+}
+
+.platform-pane {
+	flex: 0 0 34%;
+	min-width: 0;
+	padding: var(--ore-space-2);
+	border-right: 2px solid var(--ore-edge);
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+.platform-list {
+	border: 0;
+	background: transparent;
+	min-height: 100%;
+	box-sizing: border-box;
+}
+
+.platform-list .list-group-2-item {
+	min-height: 108px;
+	padding: 18px 20px;
+	gap: 16px;
+	font-size: var(--ore-font-sm);
+}
+
+.platform-name {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+/* 状态 tag：列表行和面板标题栏统一尺寸/内边距（否则标题栏里是主题默认 12px，小一圈） */
+.ore-screen .tag-2 {
+	flex: 0 0 auto;
+	font-size: 20px;
+	padding: 2px 7px 3px;
+}
+
+/* ── 右侧详情：三态切换 ─────────────────────────────────── */
+.detail-pane {
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 0;
+	padding: var(--ore-space-2);
+	display: flex;
+}
+
+.detail-panel {
+	display: none;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+#platform-detail.state-empty #panel-empty,
+#platform-detail.state-login #panel-login,
+#platform-detail.state-settings #panel-settings {
+	display: flex;
+}
+
+/* 登录面板内部：按 LoginFlowType 二选一 */
+#panel-login[data-flow="browser"] .login-flow[data-flow="device"],
+#panel-login[data-flow="device"] .login-flow[data-flow="browser"] {
+	display: none;
+}
+
+/* ── 只压尺寸，不动 Ore 的颜色与状态 ───────────────────── */
+.ore-screen .button {
+	min-height: 52px;
+	padding: 8px 22px 14px;
+	font-size: var(--ore-font-sm);
+}
+
+.ore-screen .button-small {
+	min-height: 46px;
+	padding: 6px 20px 12px;
+	font-size: var(--ore-font-sm);
+}
+
+.detail-panel .panel-header {
+	flex: 0 0 auto;
+	padding: 10px 16px;
+	font-size: var(--ore-font-md);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ore-space-2);
+}
+
+.detail-panel .panel-subtitle {
+	color: var(--ore-ink-muted);
+	font-size: 18px;
+}
+
+.detail-panel .panel-body {
+	flex: 1 1 auto;
+	min-height: 0;
+	font-size: var(--ore-font-sm);
+	padding: 14px 16px;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+.detail-panel .panel-footer {
+	flex: 0 0 auto;
+	padding: 8px 16px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+.empty-body {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	padding: 0 32px;
+}
+
+/* ── 账户信息表 ─────────────────────────────────────────── */
+.info-grid {
+	display: grid;
+	grid-template-columns: 104px 1fr;
+	row-gap: 7px;
+	column-gap: var(--ore-space-3);
+	font-size: var(--ore-font-sm);
+	line-height: 1.2;
+}
+
+.info-key {
+	color: var(--ore-ink-muted);
+}
+
+.info-val {
+	color: var(--ore-ink);
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.settings-body .ore-divider-2 {
+	margin: 4px 0;
+}
+
+.setting-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ore-space-3);
+	font-size: var(--ore-font-sm);
+}
+
+.setting-label {
+	color: var(--ore-ink);
+}
+
+/* 主题开关固定 56×30，用 transform 放大；transform 不占布局空间，所以要自己留行高 */
+#panel-settings .switch {
+	transform: scale(1.6);
+	transform-origin: right center;
+}
+
+#panel-settings .setting-row {
+	min-height: 56px;
+}
+
+/* ── 登录面板 ───────────────────────────────────────────── */
+.login-body {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.login-flow {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.code-box {
+	padding: 9px 14px;
+	border: 2px solid var(--input-2-border);
+	color: var(--ore-ink);
+	background: var(--ore-surface-deep);
+	font-size: var(--ore-font-sm);
+	line-height: 1.4;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.code-strong {
+	padding: 6px 10px 10px;
+	color: var(--ore-ink);
+	font-family: OreDisplay, sans-serif;
+	font-size: 34px;
+	letter-spacing: 7px;
+	text-align: center;
+}
+
+.row-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.login-status {
+	margin-top: 8px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: var(--ore-font-sm);
+}
+
+.login-status .spinner {
+	width: 26px;
+	height: 26px;
+	min-height: 26px;
+	border-width: 3px;
+}
+
+.poll-note {
+	font-size: 18px;
+}

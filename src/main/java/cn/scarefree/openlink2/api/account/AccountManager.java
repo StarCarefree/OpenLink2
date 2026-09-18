@@ -20,6 +20,17 @@ public interface AccountManager {
 	void registerPlatform(AccountPlatform platform);
 
 	/**
+	 * 获取所有已注册平台
+	 */
+	List<AccountPlatform> getPlatforms();
+
+	/**
+	 * 按 id 获取平台
+	 * @return 未注册时返回 null
+	 */
+	AccountPlatform getPlatform(String platformId);
+
+	/**
 	 * 发起登录
 	 */
 	CompletableFuture<LoginRequestInfo> login(String platformId);

@@ -3,10 +3,14 @@ package cn.scarefree.openlink2;
 import cn.scarefree.openlink2.utils.AesUtils;
 import cn.scarefree.openlink2.platform.Platform;
 
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+//? <1.19.2 {
+/*import net.minecraft.network.chat.TranslatableComponent;
+*///?}
 //? fabric {
 /*import cn.scarefree.openlink2.platform.fabric.FabricPlatform;
 *///?} neoforge {
@@ -81,6 +85,14 @@ public class OpenLink2 {
 		/*return ResourceLocation.fromNamespaceAndPath(namespace, path);
 		 *///?} <= 1.20.1 {
 		return new ResourceLocation(namespace, path);
+		//?}
+	}
+
+	public static MutableComponent translatable(String key, Object... args) {
+		//? < 1.19.2 {
+		/*return new TranslatableComponent(key, args);
+		 *///?} >= 1.19.2 {
+		return Component.translatable(key, args);
 		//?}
 	}
 }

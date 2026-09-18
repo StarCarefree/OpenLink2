@@ -26,6 +26,16 @@ public class AccountManagerImpl implements AccountManager {
 	}
 
 	@Override
+	public List<AccountPlatform> getPlatforms() {
+		return List.copyOf(platforms.values());
+	}
+
+	@Override
+	public AccountPlatform getPlatform(String platformId) {
+		return platforms.get(platformId);
+	}
+
+	@Override
 	public CompletableFuture<LoginRequestInfo> login(String platformId) {
 		AccountPlatform platform = getPlatformOrThrow(platformId);
 		return platform.startLogin();

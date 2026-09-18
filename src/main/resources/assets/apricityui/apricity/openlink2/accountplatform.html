@@ -1,34 +1,197 @@
-<body>
-<div class="area">
-	<div class="head">
-		<span><translation>gui.openlink2.title.accountplatform</translation></span>
-	</div>
-	<div class="scroll-list" style="width: 25%; height: 140px; padding-right: 5px;">
-		<ul>
-			<li>
-				<div class="button" id="openfrp">
-					<span>Natayark ID</span>
-				</div>
-			</li>
-			<li>
-				<div class="button" id="sakurafrp">
-					<span>SakuraFrp</span>
-				</div>
-			</li>
+<head>
+	<meta charset="UTF-8">
+	<meta name="aui-viewport" content="mode=browser">
+	<meta name="aui-mouse-events" content="intercept">
+	
+	
+	
+	
+	
+	
+	
+	
+	<link rel="stylesheet" href="/apricityui/theme/ore/ore.css">
+	<link rel="stylesheet" href="./css/accountplatform.css">
 
-		</ul>
-	</div>
-	<div class="panel" style="width: 75%; height: 140px;">
-		<span>UItest</span>
+	<!--
+	====================================================================
+	OpenLink 2 — 账户平台选择 Screen（Ore 主题）
+	宿主：Screen，Java 侧用 ApricityUI.screen("openlink2/accountplatform.html")
+	      或 new ApricityScreen("openlink2/accountplatform.html") 打开。
+
+	本页面不含任何 JS（纯 HTML/CSS，逻辑由 Java 驱动），全部逻辑由 Java 驱动。契约如下（元素 id 稳定，勿改）：
+	视口：mode=browser —— 设计尺寸固定 427×240，整体按玩家
+	的 GUI 缩放放大（原版 GUI 行为）。若想铺满窗口改成 scale=fit，想锁物理像素改成 scale=1。
+	文案用 <translation>key</translation>，key 在 assets/openlink2/lang/{zh_cn,en_us}.json。
+	注意 lang 文件不参与 DebugReload 热重载：改完 lang 要 F3+T 重载资源（或重启游戏）才生效。
+
+	1) 右侧显示哪个面板，由 #platform-detail 的 class 决定，三者取一：
+	     state-empty     未选择平台        → #panel-empty
+	     state-login     需要登录          → #panel-login
+	     state-settings  已登录          → #panel-settings
+	   Java: detail 上移除旧 state-*，加上目标 state。
+
+	2) 左侧列表 #platform-list 由 Java 填充：克隆隐藏模板 #platform-item-template，
+	   每个 .list-group-2-item 上写 data-platform="<AccountPlatform.getPlatformId()>"。
+	   选中项加 .active + aria-selected="true"；[data-bind="platform-name"] 填平台名；
+	   [data-bind="platform-state"] 填状态文案，class 用
+	     tag-2-green=已登录 / tag-2-yellow=未登录。
+	   （文案 key：gui.openlink2.accountplatform.state.logged_in / logged_out）
+
+	3) 登录面板 #panel-login 的 data-flow 取 browser | device
+	   （对应 LoginFlowType.BROWSER_OAUTH / DEVICE_CODE）：
+	     browser: [data-bind="auth-url"]  ← LoginRequestInfo.authorizationUrl
+	     device : [data-bind="user-code"] ← userCode
+	              [data-bind="verify-url"] ← verificationUri
+	              [data-bind="poll-interval"] ← intervalSeconds
+	   开始等待后去掉 #login-status 的 .hidden（内含 spinner），
+	   完成/失败时把 [data-bind="login-status"] 换成结果文案。
+	   轮询用 Manager.completeLogin(platformId, requestInfo) 完成。
+
+	4) 设置面板 [data-bind=...] 填 Account 的字段：
+	     display-name / platform-user-id / email / expires-at
+	   开关 #setting-auto-login、#setting-auto-refresh：开= .on，关= 去掉 .on。
+	   （这两项是给未来 MultiplayerSettings 留的占位，目前 Java 可忽略）
+
+	5) 按钮（事件全部由 Java 绑定）：
+	     #btn-close           关闭 Screen
+	     #btn-open-browser    BROWSER_OAUTH：打开 authorizationUrl
+	     #btn-copy-url        复制 authorizationUrl
+	     #btn-open-verify     DEVICE_CODE：打开 verificationUri
+	     #btn-copy-code       复制 userCode
+	     #btn-login-cancel    取消本次登录（丢弃 LoginRequestInfo）
+	     #btn-refresh-account Manager.ensureFreshAccount / platform.refresh
+	     #btn-logout          AccountManager.removeAccount(platformId, platformUserId)
+	====================================================================
+	-->
+</head>
+<body class="ore-theme ore-screen-host">
+
+<div class="ore-screen card-2" id="platform-screen">
+
+	<header class="screen-head">
+		<span class="screen-title font-display"><translation>gui.openlink2.accountplatform.title</translation></span>
+		<button class="button button-normal button-small" id="btn-close" type="button">✕</button>
+	</header>
+
+	<div class="screen-main">
+
+		<!-- 左：AccountPlatform 列表（Java 填充；下面是示例数据） -->
+		<nav class="platform-pane">
+			<ul class="list-group-2 platform-list" id="platform-list">
+				<li class="list-group-2-item active" data-platform="natayark" aria-selected="true" role="button">
+					<span class="platform-name" data-bind="platform-name">Natayark ID</span>
+					<span class="tag-2 tag-2-green" data-bind="platform-state"><translation>gui.openlink2.accountplatform.state.logged_in</translation></span>
+				</li>
+				<li class="list-group-2-item" data-platform="elink" role="button">
+					<span class="platform-name" data-bind="platform-name">ELink</span>
+					<span class="tag-2 tag-2-yellow" data-bind="platform-state"><translation>gui.openlink2.accountplatform.state.logged_out</translation></span>
+				</li>
+			</ul>
+		</nav>
+
+		<!-- 右：详情，三选一 -->
+		<section class="detail-pane state-empty" id="platform-detail">
+
+			<!-- ① 未选择平台 -->
+			<div class="panel-2 detail-panel" id="panel-empty">
+				<div class="panel-body empty-body">
+					<span class="text-muted"><translation>gui.openlink2.accountplatform.empty</translation></span>
+				</div>
+			</div>
+
+			<!-- ② 登录（data-flow 由 Java 按 LoginFlowType 设置） -->
+			<div class="panel-2 detail-panel" id="panel-login" data-flow="browser">
+				<div class="panel-header">
+					<span data-bind="platform-name">—</span>
+					<span class="tag-2 tag-2-yellow" data-bind="account-state"><translation>gui.openlink2.accountplatform.state.logged_out</translation></span>
+				</div>
+
+				<div class="panel-body login-body">
+
+					<div class="login-flow" data-flow="browser">
+						<span class="form-help"><translation>gui.openlink2.accountplatform.login.browser_hint</translation></span>
+						<div class="code-box" data-bind="auth-url">https://</div>
+						<div class="row-actions">
+							<button class="button button-small" id="btn-open-browser" type="button"><translation>gui.openlink2.accountplatform.login.open_browser</translation></button>
+							<button class="button button-secondary-2 button-small" id="btn-copy-url" type="button"><translation>gui.openlink2.accountplatform.login.copy_link</translation></button>
+						</div>
+					</div>
+
+					<div class="login-flow" data-flow="device">
+						<span class="form-help"><translation>gui.openlink2.accountplatform.login.device_hint</translation></span>
+						<div class="code-box code-strong" data-bind="user-code">--------</div>
+						<div class="code-box" data-bind="verify-url">https://</div>
+						<div class="row-actions">
+							<button class="button button-small" id="btn-open-verify" type="button"><translation>gui.openlink2.accountplatform.login.open_verify</translation></button>
+							<button class="button button-secondary-2 button-small" id="btn-copy-code" type="button"><translation>gui.openlink2.accountplatform.login.copy_code</translation></button>
+						</div>
+					</div>
+
+					<div class="login-status hidden" id="login-status">
+						<span class="spinner"></span>
+						<span data-bind="login-status"><translation>gui.openlink2.accountplatform.login.waiting</translation></span>
+						<span class="text-muted poll-note"><translation>gui.openlink2.accountplatform.login.polling</translation> <span data-bind="poll-interval">5</span>s</span>
+					</div>
+
+				</div>
+
+				<div class="panel-footer panel-footer-actions">
+					<button class="button button-secondary-2 button-small" id="btn-login-cancel" type="button"><translation>gui.openlink2.accountplatform.action.cancel</translation></button>
+				</div>
+			</div>
+
+			<!-- ③ 设置 / 账户信息（已登录） -->
+			<div class="panel-2 detail-panel" id="panel-settings">
+				<div class="panel-header">
+					<span data-bind="platform-name">—</span>
+					<span class="tag-2 tag-2-green" data-bind="account-state"><translation>gui.openlink2.accountplatform.state.logged_in</translation></span>
+				</div>
+
+				<div class="panel-body settings-body">
+					<div class="info-grid">
+						<span class="info-key"><translation>gui.openlink2.accountplatform.info.display_name</translation></span>
+						<span class="info-val" data-bind="display-name">—</span>
+						<span class="info-key"><translation>gui.openlink2.accountplatform.info.user_id</translation></span>
+						<span class="info-val" data-bind="platform-user-id">—</span>
+						<span class="info-key"><translation>gui.openlink2.accountplatform.info.email</translation></span>
+						<span class="info-val" data-bind="email">—</span>
+						<span class="info-key"><translation>gui.openlink2.accountplatform.info.expires_at</translation></span>
+						<span class="info-val" data-bind="expires-at">—</span>
+					</div>
+
+					<div class="ore-divider-2"></div>
+
+					<div class="setting-row">
+						<span class="setting-label"><translation>gui.openlink2.accountplatform.settings.auto_login</translation></span>
+						<span class="switch" id="setting-auto-login" data-setting="auto-login">
+							<span class="switch-control"><span class="switch-status"></span><span class="switch-button"></span></span>
+						</span>
+					</div>
+					<div class="setting-row">
+						<span class="setting-label"><translation>gui.openlink2.accountplatform.settings.auto_refresh</translation></span>
+						<span class="switch" id="setting-auto-refresh" data-setting="auto-refresh">
+							<span class="switch-control"><span class="switch-status"></span><span class="switch-button"></span></span>
+						</span>
+					</div>
+				</div>
+
+				<div class="panel-footer panel-footer-actions">
+					<button class="button button-danger-2 button-small" id="btn-logout" type="button"><translation>gui.openlink2.accountplatform.action.logout</translation></button>
+					<button class="button button-small" id="btn-refresh-account" type="button"><translation>gui.openlink2.accountplatform.action.refresh</translation></button>
+				</div>
+			</div>
+
+		</section>
 	</div>
 </div>
-</body>
 
-<style src="/apricityui/theme/ae/1.0.0.css"></style>
-<style src="./css/main.css"></style>
-<style>
-	.button {
-		padding-top: 4.5px;
-		padding-bottom: 4.5px;
-	}
-</style>
+<!-- Java 克隆模板：列表行（父级 .hidden 只是让模板不可见，克隆出的节点不带 hidden） -->
+<div class="hidden" id="template-host">
+	<li class="list-group-2-item" id="platform-item-template" data-platform="" role="button">
+		<span class="platform-name" data-bind="platform-name"></span>
+		<span class="tag-2 tag-2-yellow" data-bind="platform-state"></span>
+	</li>
+</div>
+
+</body>

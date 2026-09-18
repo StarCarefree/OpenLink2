@@ -9,6 +9,13 @@ public interface AccountPlatform {
 	String getPlatformId();
 
 	/**
+	 * @return 平台显示名称
+	 */
+	default String getDisplayName() {
+		return getPlatformId();
+	}
+
+	/**
 	 * 启动登录流程
 	 * @return 下一步需要给用户展示的信息
 	 */

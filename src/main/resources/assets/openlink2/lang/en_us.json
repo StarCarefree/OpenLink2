@@ -1,3 +1,26 @@
 {
-    
+  "gui.openlink2.accountplatform.title": "Account Platforms",
+  "gui.openlink2.accountplatform.empty": "Select an account platform on the left",
+  "gui.openlink2.accountplatform.state.logged_in": "Signed in",
+  "gui.openlink2.accountplatform.state.logged_out": "Not signed in",
+  "gui.openlink2.accountplatform.info.display_name": "Name",
+  "gui.openlink2.accountplatform.info.user_id": "User ID",
+  "gui.openlink2.accountplatform.info.email": "Email",
+  "gui.openlink2.accountplatform.info.expires_at": "Expires",
+  "gui.openlink2.accountplatform.settings.auto_login": "Auto sign-in",
+  "gui.openlink2.accountplatform.settings.auto_refresh": "Refresh on launch",
+  "gui.openlink2.accountplatform.action.cancel": "Cancel",
+  "gui.openlink2.accountplatform.action.logout": "Sign out",
+  "gui.openlink2.accountplatform.action.refresh": "Refresh account",
+  "gui.openlink2.accountplatform.login.browser_hint": "Finish the authorization in your browser, then return",
+  "gui.openlink2.accountplatform.login.open_browser": "Open browser",
+  "gui.openlink2.accountplatform.login.copy_link": "Copy link",
+  "gui.openlink2.accountplatform.login.device_hint": "Enter this code at the URL below",
+  "gui.openlink2.accountplatform.login.open_verify": "Open page",
+  "gui.openlink2.accountplatform.login.copy_code": "Copy code",
+  "gui.openlink2.accountplatform.login.waiting": "Waiting for authorization…",
+  "gui.openlink2.accountplatform.login.polling": "Checking every",
+  "gui.openlink2.accountplatform.login.failed": "Sign-in failed: %s",
+  "gui.openlink2.accountplatform.login.timeout": "Sign-in timed out, please retry",
+  "gui.openlink2.accountplatform.info.expired": " (expired)"
 }
