@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="aui-viewport" content="mode=browser,zoom=1,user-scalable=false">
+    <meta name="aui-mouse-events" content="intercept">
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+<!--
+  multiplayerservices.html —— 联机平台（左列表 + 右详情）
+  · 页面里没有 JavaScript，交互全在 Java 侧；每个交互元素都有稳定 id。
+  · 可见区域默认是【空态】：没有任何演示数据，列表容器都留给 Java 填。
+  · 需要复制的结构全部在末尾 #templates 里（Java 侧用法见 README §0.2）。
+  · 左侧：Java 清空 #service-list 后生成 .list-item（模子见末尾 #templates）。
+  · 右侧：Java 在下面 4 个状态块里【只显示一个】，其余加 .is-hidden：
+      #state-none 未选中 / #state-locked 绑定了账户平台但账号未登录（只引导去登录）
+      #state-ready 无需绑定或已登录（展示信息与启停操作）/ #state-error 启动或连接失败
+    未登录时【不给】平台设置入口，平台设置只在 #state-ready 里出现。
+  · 可用性判定（两个联机页面共用）：可用 = 不绑定账户平台，或绑定的平台有可用账号。
+  · 各 id 的详细行为表见项目 README.md 的「GUI」一节。
+-->
+    <!-- 静态背景：1.png 的三条 49° 斜色带 + 两条接缝暗线，
+         纯 CSS（旋转容器里的 linear-gradient），无动画，Java 不用管背景。 -->
+    <div class="bg" id="bg">
+        <div class="bg-rot">
+            <div class="bg-skin"></div>
+        </div>
+    </div>
+
+<div class="app">
+
+    <!-- ======================= 顶栏 ======================= -->
+    <div class="topbar">
+        <div class="btn btn-ghost" id="btn-back">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M19 12H5M12 19l-7-7 7-7" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span><translation>gui.openlink2.common.back</translation></span>
+        </div>
+        <div class="topbar-title">
+            <div class="t1" id="page-title"><translation>gui.openlink2.multiplayer.title</translation></div>
+            <div class="t2" id="page-subtitle"><translation>gui.openlink2.multiplayer.subtitle</translation></div>
+        </div>
+        <div class="topbar-actions" id="topbar-actions">
+            <div class="btn btn-ghost" id="btn-refresh">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M23 4v6h-6M1 20v-6h6" fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                          stroke-linejoin="round"></path>
+                </svg>
+                <span><translation>gui.openlink2.common.refresh</translation></span>
+            </div>
+            <!-- 联机平台设置按钮 -->
+            <div class="btn btn-ghost" id="btn-settings">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                          stroke-linejoin="round"></path>
+                </svg>
+                <span><translation>gui.openlink2.common.settings</translation></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= 内容 ======================= -->
+    <div class="content">
+
+        <!-- ---------------- 左：联机平台列表 ---------------- -->
+        <div class="panel panel-left">
+            <div class="panel-head">
+                <div class="panel-head-main">
+                    <div class="panel-title"><translation>gui.openlink2.multiplayer.panel.title</translation></div>
+                    <div class="panel-sub"><translation>gui.openlink2.multiplayer.panel.sub</translation></div>
+                </div>
+                <div class="badge" id="service-count">0</div>
+            </div>
+
+            <!-- Java 清空本容器后填充 .list-item（结构见末尾 tpl-service-item） -->
+            <div class="panel-body">
+                <div class="list" id="service-list"></div>
+
+                <div class="state state-center" id="service-empty">
+                    <div class="state-title"><translation>gui.openlink2.multiplayer.empty.title</translation></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------------- 右：详情 ---------------- -->
+        <div class="panel panel-right">
+
+            <!-- 详情头部：Java 选中平台后填 #detail-icon / #detail-name / #detail-desc /
+                 #detail-badge（徽标默认隐藏，选中后去掉 is-hidden） -->
+            <div class="detail-head" id="detail-head">
+                <div class="pf-icon" id="detail-icon">?</div>
+                <div class="detail-head-main">
+                    <div class="detail-title" id="detail-name">—</div>
+                    <div class="detail-sub" id="detail-desc">—</div>
+                </div>
+                <div class="detail-tags" id="detail-tags">
+                    <span class="badge badge-warn is-hidden" id="detail-badge"></span>
+                </div>
+            </div>
+
+            <div class="detail-body" id="detail-body">
+
+                <!-- ============ 状态 1：未选中（默认显示） ============ -->
+                <div class="state state-center" id="state-none">
+                    <div class="state-title"><translation>gui.openlink2.multiplayer.state.none.title</translation></div>
+                    <div class="state-desc"><translation>gui.openlink2.multiplayer.state.none.desc</translation></div>
+                </div>
+
+                <!-- ============ 状态 2：需要先登录账户平台 ============ -->
+                <div class="state is-hidden" id="state-locked">
+                    <div class="svc-hero">
+                        <div class="state-title" id="locked-title"><translation>gui.openlink2.multiplayer.locked.title</translation></div>
+                        <div class="state-desc" id="locked-desc"><translation>gui.openlink2.multiplayer.locked.desc</translation></div>
+
+                        <!-- 绑定关系：Java 填两侧的图标 / 名称 / 状态 -->
+                        <div class="bind-card mt-4">
+                            <div class="pf-icon" id="locked-service-icon">?</div>
+                            <div class="bind-main">
+                                <div class="bind-title" id="locked-service-name">—</div>
+                                <div class="bind-sub" id="locked-service-desc"><translation>gui.openlink2.multiplayer.locked.service_label</translation></div>
+                            </div>
+                            <div class="bind-arrow">→</div>
+                            <div class="pf-icon" id="locked-platform-icon">?</div>
+                            <div class="bind-main">
+                                <div class="bind-title" id="locked-platform-name">—</div>
+                                <div class="bind-sub" id="locked-platform-desc">—</div>
+                            </div>
+                        </div>
+
+                        <!-- 未登录时不放「平台设置」：平台设置只在可用（已登录）的平台上有 -->
+                        <div class="svc-actions mt-4">
+                            <div class="btn btn-primary" id="btn-go-account"><translation>gui.openlink2.multiplayer.action.go_account</translation></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ 状态 3：可用（无需绑定 / 已绑定且已登录） ============ -->
+                <div class="state is-hidden" id="state-ready">
+                    <div class="svc-hero">
+                        <div class="svc-hero-head">
+                            <div class="pf-icon pf-icon-lg" id="ready-icon">?</div>
+                            <div class="svc-hero-main">
+                                <div class="svc-hero-name" id="ready-name">—</div>
+                                <div class="svc-hero-desc" id="ready-desc">—</div>
+                                <div class="account-tags mt-2" id="ready-tags">
+                                    <span class="badge badge-ok" id="ready-state"><translation>gui.openlink2.multiplayer.ready.state</translation></span>
+                                    <span class="badge badge-plain" id="ready-bind"><translation>gui.openlink2.common.bind.none</translation></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-list mt-2">
+                            <div class="info-row">
+                                <div class="info-k"><translation>gui.openlink2.multiplayer.info.status</translation></div>
+                                <div class="info-v" id="ready-status"><translation>gui.openlink2.multiplayer.status.stopped</translation></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-k"><translation>gui.openlink2.multiplayer.info.address</translation></div>
+                                <div class="info-v info-v-mono" id="ready-address">—</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-k"><translation>gui.openlink2.multiplayer.info.account</translation></div>
+                                <div class="info-v" id="ready-account">—</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-k"><translation>gui.openlink2.multiplayer.info.expires</translation></div>
+                                <div class="info-v" id="ready-expire">—</div>
+                            </div>
+                            <div class="info-row info-row-last">
+                                <div class="info-k"><translation>gui.openlink2.multiplayer.info.ping</translation></div>
+                                <div class="info-v" id="ready-ping">—</div>
+                            </div>
+                        </div>
+
+                        <div class="svc-actions mt-4">
+                            <div class="btn btn-primary" id="btn-open-service"><translation>gui.openlink2.multiplayer.action.open</translation></div>
+                            <div class="btn btn-ghost" id="btn-service-start"><translation>gui.openlink2.multiplayer.action.start</translation></div>
+                            <div class="btn btn-ghost" id="btn-service-stop"><translation>gui.openlink2.multiplayer.action.stop</translation></div>
+                            <div class="btn btn-ghost" id="btn-service-settings"><translation>gui.openlink2.common.settings</translation></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ 状态 4：失败 ============ -->
+                <div class="state state-center is-hidden" id="state-error">
+                    <div class="state-title" id="error-title"><translation>gui.openlink2.multiplayer.error.title</translation></div>
+                    <div class="state-desc" id="error-desc">—</div>
+                    <div class="state-actions">
+                        <div class="btn btn-ghost" id="btn-error-settings"><translation>gui.openlink2.common.platform_settings</translation></div>
+                        <div class="btn btn-primary" id="btn-error-retry"><translation>gui.openlink2.common.retry</translation></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================ Java 侧模板 ============================
+     整块 display:none，只当模子用：
+
+         Element item = doc.getElementById("tpl-service-item").cloneNode(true);
+         item.setAttribute("id", "service-item-" + serviceId);     // 再改文案
+         doc.getElementById("service-list").appendChild(item);
+
+     · 点击分发建议只在一处监听：#service-list 的 click → closest(".list-item")
+       → 从 id 后缀取 serviceId → 决定显示哪个状态块
+     · 状态圆点：dot-ok 可用 / dot-warn 绑定但未登录 / dot-danger 失败 / dot-idle 未启动
+     · 状态切换：目标块 remove("is-hidden")、其它块 add("is-hidden")；
+       #detail-head 始终显示当前平台信息
+     ==================================================================== -->
+<div id="templates" class="is-hidden">
+
+    <!-- 左侧联机平台项
+         三个文案槽位：.pf-icon 首字母 / .list-item-name 平台名 / .list-item-sub 绑定状态 -->
+    <div class="list-item" id="tpl-service-item">
+        <div class="pf-icon">A</div>
+        <div class="list-item-main">
+            <div class="list-item-name">联机平台名称</div>
+            <div class="list-item-sub">已绑定 · 已登录</div>
+        </div>
+        <div class="list-item-tail"><span class="dot dot-ok"></span></div>
+    </div>
+</div>
+</body>
+</html>

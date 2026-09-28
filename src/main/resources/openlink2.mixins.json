@@ -8,6 +8,6 @@
   },
   "mixins": [],
   "client": [
-    "UselessMixin"
+    "IScreenAccessor"
   ]
 }

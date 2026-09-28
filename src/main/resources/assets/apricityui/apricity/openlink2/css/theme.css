@@ -1,0 +1,1307 @@
+/* ==========================================================================
+   OpenLink 2 · 薄荷主题 (Mint) —— 通用样式层
+   --------------------------------------------------------------------------
+   适用：ApricityUI (github.com/Tower-of-Sighs/AUI, snow 分支)
+   覆盖页面：settings.html / accountplatforms.html / multiplayerservices.html
+             / selection.html                     （页面专属排版在 pages.css）
+   页面里【没有任何 JavaScript】，交互全部由 Java 侧实现
+   （见仓库根目录 README.md 的「GUI 实现清单（Java 侧）」一节）。
+
+   ── 怎么改（给人看） ──────────────────────────────────────────────
+   · 换配色 / 圆角 / 阴影 / 间距 → 只改 §1 的设计令牌，别在组件里写死颜色和像素。
+   · 换背景                     → §2，以及文末 §14 的背景方案小史。
+   · 想知道某个 id / class 谁在用 → §13 Java 侧契约。
+   · 某个组件长什么样            → 每节开头的注释里有它的 DOM 结构与变体类名。
+
+   ── 怎么改（给 AI / agent） ───────────────────────────────────────
+   · 动任何样式之前先读 §0：那里列了 AUI 引擎与浏览器的差异，忽略它会画出灰块/错位。
+   · 颜色、圆角、阴影、间距一律走 §1 的 var(--*)，不要新增字面量。
+   · 布局只用 flex + gap，不要 float / table / sticky。
+   · §13 里的 id / class 是与 Java 侧的接口，改名会让 Java 静默失效。
+
+   ── 目录 ──────────────────────────────────────────────────────────
+   §0  AUI 渲染环境：限制与已知坑        ← 改样式前必读
+   §1  设计令牌与基础排版
+   §2  背景：1.png 的三条 49° 斜色带
+   §3  应用外壳（.app / 顶栏 / 内容区）
+   §4  面板与卡片
+   §5  按钮
+   §6  列表项 / 平台图标 / 状态点
+   §7  徽标
+   §8  表单控件
+   §9  状态块与提示块
+   §10 详情区 / 信息表
+   §11 滚动条
+   §12 工具类
+   §13 Java 侧契约（id / class 速查）
+   §14 背景方案小史
+   ========================================================================== */
+
+/* ==========================================================================
+   §0  AUI 渲染环境：限制与已知坑
+   --------------------------------------------------------------------------
+   AUI 不是浏览器，HTML/CSS 由自研引擎解析。本主题只用了确认支持的子集：
+   flex、absolute/relative 定位、linear-gradient、var()、border-radius、
+   box-shadow、transition、:hover、::-webkit-scrollbar。
+
+   下面每条都是实际踩过的坑（2026-09 的构建实测；升级 AUI 后可以重新验证）：
+
+   1) transform 里的【百分号 translate】会被丢弃，rotate 正常。
+      → 大容器居中请用 left/top:-100%，不要写 translate(-50%,-50%)。
+   2) transform 【不作用于子元素】。
+      → 需要一起旋转的元素要做成兄弟节点、各自带 transform（见 §2 背景）。
+   3) background-image 的【第二层背景】不套 transform。
+      → 别把需要跟着旋转的渐变并成同一元素的第二层背景。
+   4) transform 会【泄漏给紧随其后的兄弟节点】。
+      → 兄弟节点自己再写 rotate 会叠加成两倍角度。
+   5) box-shadow 的【模糊半径被当成"扩散"】画，不会衰减。
+      → 只留 1~3px 的小模糊；18px 这类大模糊会变成硬边"灰框框"、还会把面板压暗。
+   6) backdrop-filter 的 backdrop 采样位置不对，会糊出灰块 + 黑竖条。
+      → 不要用毛玻璃；想做出"磨砂"观感就调大 --c-surface 的 alpha（见 §1）。
+   7) CSS 注释【不能嵌套】—— 注释块里再写注释符号会提前结束注释，
+      后面的文字会被当成裸声明（日志：invalid declarations ... malformedPairs）。
+   ========================================================================== */
+
+/* ==========================================================================
+   §1  设计令牌与基础排版
+   --------------------------------------------------------------------------
+   令牌全部定义在 body 上（自定义属性会继承，页面里所有元素都能取到）。
+   注意：html 是 body 的父级，取不到这些变量，所以 html 的兜底色只能写字面量。
+   这一节下面依次是：全局盒模型 → html 兜底色 → body 令牌 + 基础排版。
+   ========================================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    width: 100%;
+    height: 100%;
+    /* 兜底色。这里不能用 var(--c-band-1)：调色板定义在 body 上，html 拿不到。 */
+    background-color: #bfefdf;
+}
+
+body {
+    /* ---------- 调色板：全部取自 1.png / 2.png / 3.png ---------- */
+    /* 两条主色带色（浅色带 / 深色带），用在 .bg 与 .bg-rot 的渐变里；
+       中间带和两条接缝的过渡色是渐变的中间停点，直接写在 .bg-rot 里。
+       （原调色板还有 --c-band-2/-3 两个"中间带靠浅/靠深侧"的取样色，无人使用，已删。） */
+    --c-band-1: #bfefdf;          /* 1.png 浅色带 */
+    --c-band-4: #88ded3;          /* 1.png 深色带 */
+
+    --c-ink: #10332f;             /* 主文字 */
+    --c-ink-2: #3f6b64;           /* 次级文字 */
+    --c-ink-3: #7a9d97;           /* 弱化文字 */
+    --c-ink-invert: #ffffff;
+
+    /* 半透明表面：用 4.png 里“背景斜色带透过面板后的台阶衰减”反推得到。
+       这两档是毛玻璃面板（.panel / .sel-item）的底：数字越小越透，
+       想整体更透/更实就改这两行（-strong 用在左侧列表面板和选择页的列表项上）。
+
+       现状：AUI 的 backdrop-filter 用不了（见 .panel 的注释），面板后面没有模糊，
+       背景斜色带的接缝会硬生生穿过面板。为了接近浏览器的"磨砂"观感，
+       这两档比最初设计调高了一些（原值 0.42 / 0.58），让接缝的对比度降下来。
+       想更透就往回调，想更"实"就往上加。 */
+    --c-surface: rgba(255, 255, 255, 0.55);
+    --c-surface-strong: rgba(255, 255, 255, 0.68);
+    --c-surface-2: rgba(255, 255, 255, 0.42);
+    --c-surface-3: rgba(255, 255, 255, 0.34);
+    --c-surface-solid: rgba(255, 255, 255, 0.85);
+    --c-line: rgba(16, 51, 47, 0.10);
+    --c-line-2: rgba(16, 51, 47, 0.12);
+    --c-line-light: rgba(255, 255, 255, 0.55);
+
+    /* 统一按钮：半透明灰（取自 4.png 的「返回 / 登录 / 退出」按钮 #6b7b76）
+       四个按钮变体只在“深浅”上分主次，色相完全一致 */
+    --c-btn: rgba(62, 74, 70, 0.58);
+    --c-btn-hover: rgba(62, 74, 70, 0.72);
+    --c-btn-active: rgba(62, 74, 70, 0.86);
+    --c-btn-strong: rgba(44, 56, 52, 0.76);
+    --c-btn-strong-hover: rgba(44, 56, 52, 0.88);
+    --c-btn-strong-active: rgba(44, 56, 52, 0.96);
+    --c-btn-weak: rgba(62, 74, 70, 0.46);
+    --c-btn-weak-hover: rgba(62, 74, 70, 0.60);
+    --c-btn-border: rgba(255, 255, 255, 0.16);
+
+    --c-accent: #0f9e8d;          /* 主色（按钮、选中态） */
+    --c-accent-2: #0b8073;
+    --c-accent-soft: rgba(15, 158, 141, 0.16);
+    --c-accent-soft-2: rgba(15, 158, 141, 0.10);
+
+    --c-ok: #12a271;
+    --c-ok-soft: rgba(18, 162, 113, 0.16);
+    --c-warn: #e08c1f;
+    --c-warn-soft: rgba(224, 140, 31, 0.18);
+    --c-danger: #e11d48;          /* 取自 3.png 六边形 */
+    --c-danger-soft: rgba(225, 29, 72, 0.14);
+
+    /* ---------- 形状与阴影 ---------- */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-pill: 999px;
+
+    --sh-1: 0 1px 2px rgba(16, 51, 47, 0.06);
+    /* 注意：AUI 把 box-shadow 的模糊半径当"扩散"画——不会衰减，就是一整块实心灰。
+       所以这里只留小模糊（1~2px，看不出来），大模糊（20px 级别）会变成"灰框框"。
+       --sh-2 原本是 0 2px 6px + 0 8px 22px，那层 22px 会在图标周围糊一个大灰块。
+       （原有的 --sh-3 = 0 10px 34px 无人使用，已删。） */
+    --sh-2: 0 2px 6px rgba(16, 51, 47, 0.07);
+
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 22px;
+
+    /* ---------- 背景 ----------
+       背景现在是真正的 DOM 色块（见下面「0. 动态背景」一节），body 只留兜底色，
+       这样色块才能靠 transform / background-color / opacity 做可用性切换动画。 */
+    background-color: var(--c-band-1);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+
+    /* ---------- 基础排版 ---------- */
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    color: var(--c-ink);
+    /* 基准字号：17.5px（整页所有字号在初版基础上统一 ×1.1，想再大/小就搜 "font-size" 一起调） */
+    /* 默认走 AUI 自带字体（中文由游戏内字体渲染）。
+       如果你给页面加了 @font-face，把字体名放到最前面即可，例如：
+       font-family: "MyFont", "Minecraft", sans-serif; */
+    font-family: "Minecraft", "lxgw", sans-serif;
+    font-size: 19px;
+    line-height: 1.5;
+    letter-spacing: 0;
+    user-select: none;
+}
+
+/* ==========================================================================
+   §2  背景：1.png 的三条 49° 斜色带（纯 CSS、静态、无动画）
+   --------------------------------------------------------------------------
+   做法：一个 300%×300% 的容器（.bg-rot）绕中心旋转 49°，里面用 180° 硬停点渐变
+   画出三条带（跨带方向 = 容器 y%，停点按 1.png 沿跨带方向采样得到）；
+   中间那条带再由它的子元素 .bg-skin 叠一层沿带方向的渐变。
+   ★ 这两个元素的位置/尺寸/旋转都是踩坑后调出来的，改之前先看 §0 的 1~4 条。
+
+   容器尺寸/位置都是视口百分比，所以任何窗口比例下色带都是正 49°、
+   相对位置一致，和分辨率无关。Java 侧不需要为背景做任何事。
+   ========================================================================== */
+
+.bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+    background-color: var(--c-band-1);
+    /* ===================== 背景方案 =====================
+       当前：纯 CSS 渐变（.bg-rot 旋转出三条 49° 斜色带 + .bg-skin 画中间带的沿带渐变）。
+
+       备用：贴图方案。img/bg.png 是设计原图 1.png（9268×4972），一张图包含全部色带，
+       启用下面三行即可（注意：AUI 里 url() 是相对 CSS 文件解析的）：
+           background-image: url("../img/bg.png");
+           background-repeat: no-repeat;
+           background-size: 100% 100%;
+       贴图的代价是随窗口拉伸，窗口比例变化时斜带角度会浮动 2~3°；
+       纯 CSS 是分辨率无关的。
+
+       注意：CSS 注释不能嵌套 —— 别在这个块里再写注释符号，否则会提前结束注释、
+       后面的文字会被当成裸声明（日志报 invalid declarations ... malformedPairs）。 */
+}
+
+.bg-rot {
+    position: absolute;
+    /* 居中一块 300%×300% 的色带容器。
+       坑 1：AUI 会丢掉 transform 里的 translate(-50%,-50%)，容器会跑到视口中心往右下，
+             整页背景错位。用 left/top:-100% 与 left/top:50% + translate(-50%,-50%) 完全等价。 */
+    left: -100%;
+    top: -100%;
+    width: 300%;
+    height: 300%;
+    transform: rotate(49deg);
+    transform-origin: center center;
+    /* 三条主色带 + 两条接缝：45.5% 上接缝、55.0% 下接缝。
+       注意：**不要**在这里加第二层背景来做中间带的沿带渐变 —— AUI 对 background-image
+       的第二层不套 transform，那层会以未旋转的姿态贴上来，在页面中间糊出一块轴对齐的
+       矩形色块。沿带渐变由下面的 .bg-skin 单独负责。 */
+    background-image:
+        linear-gradient(180deg,
+            var(--c-band-4) 0%,
+            var(--c-band-4) 44.85%,
+            #87ddd2 45.00%,
+            #84d7cc 45.25%,
+            #7dcbc1 45.40%,
+            #77c2b8 45.50%,
+            #beeede 45.58%,
+            #beeede 54.88%,
+            #a6d0c2 55.00%,
+            #b2dfd0 55.15%,
+            #bae9d9 55.30%,
+            #beeede 55.50%,
+            var(--c-band-1) 55.75%,
+            var(--c-band-1) 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-position: 0 0;
+}
+
+/* 1.png 中间带的「沿带渐变」：从青绿(#83dcd1)沿带方向渐变到浅薄荷(#c5f1e2)。
+   --------------------------------------------------------------------------
+   它是 .bg-rot 的子元素，位置/尺寸就是设计原值，自己不写 transform
+   （跟着父元素的 rotate(49deg) 一起转）。
+   历史坑（旧版 AUI）：父元素的 transform 不传给子元素 → 它会横平竖直地画成一块
+   矩形色块；当时只好把它挪成 .bg-rot 的兄弟节点并靠"transform 泄漏"来转。
+   更新 AUI 后已按原始写法回归，若又出现"页面中间一块矩形色块"，就是这条又坏了。 */
+.bg-skin {
+    position: absolute;
+    left: -6.3%;
+    top: 45.58%;
+    width: 112.5%;
+    height: 9.30%;
+    background-image: linear-gradient(90deg,
+        #83dcd1 35%, #87ddd2 40%, #90e0d4 45%, #a3e6d8 50%,
+        #b6ecdc 55%, #beeede 60%, #c5f1e2 65%);
+}
+
+/* ==========================================================================
+   §3  应用外壳（.app / 顶栏 / 内容区）
+   ========================================================================== */
+
+.app {
+    position: relative;
+    z-index: 1;                 /* 盖在 .bg 之上 */
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    /* 整个 UI 往里收：比例对齐 4.png（1920×1030 实测）
+       4.png：左右留白 94（4.9%）、顶部 97（9.4%）、底部 67（6.5%）、面板高 766（74%）。
+       这里换算到 1536×864 → 左右 64、上 76、下 52（面板约占 77% 高）。
+       按钮（返回 / 刷新 / 设置）跟着 .app 一起内收，并和面板左右边缘对齐。 */
+    /* 用百分比：1536 逻辑宽时正好等于设计的 76/64/52，窗口小的时候自动收紧 */
+    padding: 4.95% 4.17% 3.39% 4.17%;
+    overflow: hidden;
+}
+
+/* 顶栏 */
+.topbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    height: 64px;
+    flex: 0 0 64px;
+    margin-bottom: 12px;
+    padding: 0;              /* 左右留白由 .app 提供，保证返回按钮和左面板左边缘对齐 */
+}
+
+.topbar-title {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.topbar-title .t1 {
+    font-size: 26px;
+    line-height: 1.25;
+    font-weight: 700;
+    color: var(--c-ink);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.topbar-title .t2 {
+    font-size: 16px;
+    line-height: 1.3;
+    color: var(--c-ink-2);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.topbar-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    flex: 0 0 auto;
+}
+
+/* 内容区 */
+.content {
+    display: flex;
+    flex-direction: row;
+    /* 窗口窄到放不下两栏时换行（不依赖 @media，AUI 的 @media 按宿主窗口算） */
+    flex-wrap: wrap;
+    /* 两栏间距：4.png 里两栏几乎是贴着的，这里留一条细缝 */
+    gap: 6px;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;        /* 换行后内容变高时，整块可以滚 */
+}
+
+.content-col {
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ==========================================================================
+   §4  面板与卡片
+   ========================================================================== */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background-color: var(--c-surface);          /* 半透明：背景色块会透出来 */
+    /* 毛玻璃（backdrop-filter）暂时不能用：AUI 会把 backdrop 采样到错误的位置，
+       面板下半部糊出一大片灰块、两栏之间还会多一条黑/灰竖条。
+       2026-09-28 的构建实测仍然如此：blur(18px) 是一大块，blur(4px) 只是等比缩小
+       （缝隙里剩一条灰带 + 面板底部一条灰带），所以不是半径问题。
+       想要接近浏览器的观感，只能把 --c-surface 的 alpha 调大一点（面板更实、接缝更淡）。 */
+    border: 1px solid var(--c-line-light);
+    border-radius: var(--r-lg);
+    /* 不要 0 4px 18px 这种大模糊阴影：AUI 会画成一整块实心灰（面板内部被压暗 + 外圈灰框）。
+       想加立体感用 border / 半透明底色，别用大 blur。 */
+    box-shadow: 0 1px 2px rgba(16, 51, 47, 0.05);
+    overflow: hidden;
+}
+
+.panel-left {
+    flex: 0 1 328px;
+    /* 注意：AUI 的 flex 换行判定按元素的 natural 宽（不是 flex-basis），
+       所以这里必须显式写 width，窄窗口才会真的换行；min-width:0 允许后续收缩 */
+    width: 328px;
+    min-width: 0;
+    min-height: 0;
+    /* 4.png 里左侧列表面板比右侧更实，这里保留同样的层次差 */
+    background-color: var(--c-surface-strong);
+}
+
+.panel-right {
+    /* 基宽 420（同样要写 width 给 natural 用）：内容宽 < 328+6+420 时换到第二行 */
+    flex: 1 1 420px;
+    width: 420px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.panel-head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-3);
+    flex: 0 0 auto;
+    padding: 16px 18px 12px 18px;
+    border-bottom: 1px solid var(--c-line);
+}
+
+.panel-head-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--c-ink);
+}
+
+.panel-sub {
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--c-ink-3);
+}
+
+.panel-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+}
+
+.panel-body-flat {
+    padding: 0;
+}
+
+.panel-foot {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    flex: 0 0 auto;
+    padding: 12px 18px;
+    border-top: 1px solid var(--c-line);
+    background-color: var(--c-surface-2);
+}
+
+.spacer {
+    flex: 1 1 auto;
+}
+
+/* ==========================================================================
+   §5  按钮
+   ========================================================================== */
+
+.btn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    height: 38px;
+    padding: 0 18px;
+    border: 1px solid var(--c-btn-border);
+    border-radius: var(--r-md);
+    background-color: var(--c-btn);
+    color: var(--c-ink-invert);
+    font-family: inherit;
+    font-size: 18px;
+    line-height: 1;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 2px rgba(16, 51, 47, 0.10);
+    transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+/* AUI 画文字时基线比浏览器高，但只影响【文字被 <span> 包住】的按钮。
+   实测（1366×792，按钮高 38px）：
+     · <span><translation>…</translation></span>  （返回 / 刷新 / 设置，图标+文字）
+         文字中心比按钮中心高 7px —— 需要下面这条 padding-top 压回来；
+     · <div class="btn"><translation>…</translation></div>（其它全部按钮）
+         文字本来就居中（偏差 <1px），【不要】加 padding，否则会压低 5px。
+   只作用于 span，不动 svg 图标。 */
+.btn > span {
+    padding-top: 10px;
+}
+
+.btn:hover {
+    background-color: var(--c-btn-hover);
+}
+.btn:active {
+    background-color: var(--c-btn-active);
+}
+
+/* 主操作：同色系、更实一点 */
+.btn-primary {
+    background-color: var(--c-btn-strong);
+}
+
+.btn-primary:hover {
+    background-color: var(--c-btn-strong-hover);
+}
+
+.btn-primary:active {
+    background-color: var(--c-btn-strong-active);
+}
+
+/* 次级 / 弱操作：同色系、更淡一点 */
+.btn-soft {
+    background-color: var(--c-btn-weak);
+    border-color: var(--c-btn-border);
+    box-shadow: none;
+}
+
+.btn-soft:hover {
+    background-color: var(--c-btn-weak-hover);
+}
+
+.btn-ghost {
+    background-color: var(--c-btn-weak);
+    border-color: var(--c-btn-border);
+    box-shadow: none;
+}
+
+.btn-ghost:hover {
+    background-color: var(--c-btn-weak-hover);
+}
+
+/* 危险操作（退出登录 / 停止）：红色，和哑光灰按钮区分开。
+   想回到“和其它按钮完全一样”的状态，把下面这 4 段的 background-color 换成
+   var(--c-btn-strong) / var(--c-btn-strong-hover) / var(--c-btn-weak) / var(--c-btn-weak-hover) 即可。 */
+
+.btn-danger {
+    background-color: rgba(190, 60, 80, 0.72);
+}
+
+.btn-danger:hover {
+    background-color: rgba(190, 60, 80, 0.86);
+}
+
+.btn-danger-ghost {
+    background-color: rgba(190, 60, 80, 0.52);
+    border-color: var(--c-btn-border);
+    box-shadow: none;
+}
+
+.btn-danger-ghost:hover {
+    background-color: rgba(190, 60, 80, 0.70);
+}
+
+
+.btn-lg {
+    height: 46px;
+    padding: 0 28px;
+    font-size: 20px;
+    border-radius: var(--r-lg);
+}
+
+.btn-sm {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 17px;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-icon {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    gap: 0;
+    border-radius: 50%;
+}
+
+.btn.is-disabled,
+.is-disabled > .btn,
+.btn:disabled {
+    opacity: 0.42;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+/* 图标 */
+.icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+    flex: 0 0 auto;
+}
+
+.icon-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.icon-lg {
+    width: 24px;
+    height: 24px;
+}
+
+.icon-btn-mask {
+    /* 用父级颜色给 stroke 图标上色（AUI 中 currentColor 在 svg 内有效） */
+    color: inherit;
+}
+
+/* ==========================================================================
+   §6  列表项 / 平台图标 / 状态点（账户平台与联机平台共用）
+   ========================================================================== */
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.list-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background-color: transparent;
+    cursor: pointer;
+    transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.list-item:hover {
+    background-color: var(--c-accent-soft-2);
+}
+
+.list-item.active {
+    background-color: var(--c-accent-soft);
+    border-color: rgba(15, 158, 141, 0.28);
+}
+
+.list-item.is-disabled {
+    opacity: 0.55;
+    cursor: default;
+    pointer-events: none;
+}
+
+.list-item-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 2px;
+}
+
+.list-item-name {
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 500;
+    color: var(--c-ink);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.list-item-sub {
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--c-ink-3);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.list-item-tail {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+/* 平台图标 */
+.pf-icon {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    border-radius: var(--r-md);
+    background-color: var(--c-accent);
+    color: var(--c-ink-invert);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    overflow: hidden;
+    box-shadow: var(--sh-1);
+}
+
+.pf-icon img,
+.pf-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pf-icon-sm {
+    width: 28px;
+    height: 28px;
+    font-size: 17px;
+    border-radius: var(--r-sm);
+}
+
+.pf-icon-lg {
+    width: 76px;
+    height: 76px;
+    font-size: 41px;
+    border-radius: 20px;
+    box-shadow: var(--sh-2);
+}
+
+.pf-icon-xl {
+    width: 96px;
+    height: 96px;
+    font-size: 52px;
+    border-radius: 24px;
+    box-shadow: var(--sh-2);
+}
+
+/* 状态圆点 */
+.dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background-color: var(--c-ink-3);
+    flex: 0 0 auto;
+}
+
+.dot-ok {
+    background-color: var(--c-ok);
+}
+
+.dot-warn {
+    background-color: var(--c-warn);
+}
+
+.dot-danger {
+    background-color: var(--c-danger);
+}
+
+.dot-idle {
+    background-color: #c3d3d0;
+}
+
+/* ==========================================================================
+   §7  徽标 / 状态标签
+   ========================================================================== */
+
+.badge {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-1);
+    height: 26px;
+    padding: 0 10px;
+    border-radius: var(--r-sm);
+    background-color: var(--c-surface-3);
+    color: var(--c-ink-2);
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.badge-accent {
+    background-color: var(--c-accent-soft);
+    color: var(--c-accent-2);
+}
+
+.badge-ok {
+    background-color: var(--c-ok-soft);
+    color: #0c7c56;
+}
+
+.badge-warn {
+    background-color: var(--c-warn-soft);
+    color: #a4640d;
+}
+
+.badge-danger {
+    background-color: var(--c-danger-soft);
+    color: #b9143d;
+}
+
+.badge-plain {
+    background-color: var(--c-surface-2);
+    border: 1px solid var(--c-line-2);
+}
+
+/* ==========================================================================
+   §8  表单控件
+   ========================================================================== */
+
+.field-label {
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--c-ink-3);
+    margin-bottom: 6px;
+}
+
+.input {
+    height: 38px;
+    width: 240px;
+    padding: 0 12px;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-md);
+    background-color: var(--c-surface-solid);
+    color: var(--c-ink);
+    font-family: inherit;
+    font-size: 18px;
+    line-height: 1;
+    overflow: visible;
+}
+
+.input:focus {
+    border-color: var(--c-accent);
+}
+
+.input-num {
+    width: 96px;
+}
+
+.input-full {
+    /* 文本类输入框用这个更宽松的宽度（不要用 %，父级是 auto 宽会形成循环） */
+    width: 320px;
+}
+
+.select {
+    width: 200px;
+}
+
+textarea.input {
+    height: 84px;
+    padding: 8px 12px;
+    line-height: 1.4;
+    resize: vertical;
+}
+
+/* 开关 */
+.toggle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 48px;
+    height: 28px;
+    padding: 3px;
+    flex: 0 0 auto;
+    border-radius: var(--r-pill);
+    background-color: rgba(16, 51, 47, 0.16);
+    cursor: pointer;
+    transition: background-color 0.16s ease;
+}
+
+.toggle-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1px 3px rgba(16, 51, 47, 0.28);
+    transition: transform 0.16s ease;
+}
+
+.toggle.on {
+    background-color: var(--c-accent);
+}
+
+.toggle.on .toggle-dot {
+    transform: translateX(20px);
+}
+
+.toggle.is-disabled {
+    opacity: 0.42;
+    pointer-events: none;
+}
+
+/* 单选 / 复选（原生控件，由 AUI 自绘） */
+.choice {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: 17px;
+    color: var(--c-ink-2);
+}
+
+/* ==========================================================================
+   §9  状态块与提示块
+   ========================================================================== */
+
+.state {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+}
+
+.state-center {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 36px 24px;
+    gap: 6px;
+}
+
+.state-title {
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--c-ink);
+}
+
+.state-desc {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--c-ink-2);
+    max-width: 460px;
+}
+
+.state-tip {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--c-ink-3);
+    max-width: 460px;
+}
+
+.state-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+/* 插图卡片已不再使用：1/2/3.png 现在作为「动态背景」的三个状态（见文件开头 0. 节）。
+   如果还想在某个状态里放插图，把 .art* 那几条规则恢复，并在 img/ 里用 empty.png / alert.png 即可。 */
+
+/* 提示条 */
+.notice {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    background-color: var(--c-surface-3);
+    color: var(--c-ink-2);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.notice-accent {
+    background-color: var(--c-accent-soft);
+    color: var(--c-accent-2);
+}
+
+.notice-warn {
+    background-color: var(--c-warn-soft);
+    color: #8f5709;
+}
+
+.notice-danger {
+    background-color: var(--c-danger-soft);
+    color: #a81340;
+}
+
+.notice-ok {
+    background-color: var(--c-ok-soft);
+    color: #0c7c56;
+}
+
+.notice-icon {
+    flex: 0 0 auto;
+    margin-top: 1px;
+}
+
+/* ==========================================================================
+   §10 详情区 / 信息表
+   ========================================================================== */
+
+.detail-head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    flex: 0 0 auto;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--c-line);
+}
+
+.detail-head-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 3px;
+}
+
+.detail-title {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--c-ink);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.detail-sub {
+    font-size: 16px;
+    line-height: 1.4;
+    color: var(--c-ink-2);
+}
+
+.detail-tags {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.detail-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+}
+
+/* 信息表 */
+.info-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    background-color: var(--c-surface-2);
+}
+
+.info-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--c-line);
+}
+
+.info-row-last,
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-k {
+    width: 116px;
+    flex: 0 0 auto;
+    font-size: 16px;
+    color: var(--c-ink-3);
+}
+
+.info-v {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 17px;
+    color: var(--c-ink);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.info-v-mono {
+    font-family: inherit;
+    letter-spacing: 0.4px;
+}
+
+/* 复制框 */
+.copy-box {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-md);
+    background-color: var(--c-surface-2);
+}
+
+.copy-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 16px;
+    color: var(--c-ink-2);
+    word-break: break-all;
+    white-space: normal;
+    line-height: 1.45;
+    user-select: text;
+}
+
+/* ==========================================================================
+   §11 滚动条
+   ========================================================================== */
+
+.panel-body::-webkit-scrollbar,
+.detail-body::-webkit-scrollbar,
+.scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.panel-body::-webkit-scrollbar-thumb,
+.detail-body::-webkit-scrollbar-thumb,
+.scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(16, 51, 47, 0.18);
+    border-radius: 4px;
+}
+
+.panel-body::-webkit-scrollbar-thumb:hover,
+.detail-body::-webkit-scrollbar-thumb:hover,
+.scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(16, 51, 47, 0.32);
+}
+
+.panel-body::-webkit-scrollbar-track,
+.detail-body::-webkit-scrollbar-track,
+.scroll::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* ==========================================================================
+   §12 工具类
+   ========================================================================== */
+
+.is-hidden {
+    /* !important：避免被 pages.css 里同优先级的 display:flex 覆盖 */
+    display: none !important;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.row-between {
+    justify-content: space-between;
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.wrap {
+    flex-wrap: wrap;
+}
+
+.grow {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.text-dim {
+    color: var(--c-ink-3);
+    font-size: 14px;
+}
+
+.text-mid {
+    color: var(--c-ink-2);
+}
+
+.mt-2 {
+    margin-top: var(--sp-2);
+}
+
+.mt-3 {
+    margin-top: var(--sp-3);
+}
+
+.mt-4 {
+    margin-top: var(--sp-4);
+}
+
+.mt-5 {
+    margin-top: var(--sp-5);
+}
+
+/* ==========================================================================
+   §13 Java 侧契约（id / class 速查）
+   --------------------------------------------------------------------------
+   下面这些 id / class 是 CSS 与 Java 之间的接口：Java 通过它们取元素、
+   加状态类、写文案。**改名 = Java 静默失效**（getElementById 返回 null）。
+   完整的 Java 实现清单见仓库根目录 README.md 的「GUI 实现清单（Java 侧）」。
+
+   【四个页面公共】
+     #bg  .bg-rot  .bg-skin     背景，Java 不用碰
+     .app                       页面根容器（面板 + 顶栏都在里面）
+     #btn-back                  返回
+     #page-title #page-subtitle 标题 / 副标题（Java 写入）
+     #topbar-actions            顶栏右侧按钮容器（本包未占用，留给 Java 插按钮）
+     .is-hidden                 通用隐藏类（display:none !important），状态块靠它切换
+     .spacer                    弹性占位（把后面的元素推到另一头）
+     #templates                 Java 侧隐藏模板块（在 .app 之后，display:none）：
+                                Java 只 getElementById("tpl-*") + cloneNode，
+                                再 append 到对应容器；样式与普通节点完全一样，
+                                所以这里不需要任何专门规则。清单见 README §0.2。
+
+   【状态 / 变体类（Java toggle）】
+     .active        列表项选中态（.list-item.active）
+     .on            .toggle 打开态
+     .is-disabled   禁用：.btn / .list-item 会降低透明度并吃掉点击
+     .is-hidden     隐藏
+     徽标配色：.badge .badge-ok .badge-warn .badge-danger .badge-accent .badge-plain
+     状态点：  .dot .dot-ok .dot-warn .dot-danger .dot-idle
+
+   【settings.html】 #settings-list(Java 填充) #settings-empty #settings-panel-title
+     #settings-panel-sub #settings-scope #settings-foot #btn-reset #btn-save #btn-close
+     Java 生成的行：.set-group .set-row .set-main .set-label .set-desc .set-ctrl
+                    .toggle(+.on) / .input .input-full .input-num .select / .btn .btn-sm
+                    .set-note .set-note-warn .set-sep（模板 tpl-set-* 见 #templates）
+
+   【accountplatforms.html】 #platform-list #platform-count #platform-empty
+     #btn-refresh #btn-add-account #detail-head #detail-icon #detail-name #detail-desc
+     #detail-badge #detail-body #detail-tags
+     五个状态块： #state-none #state-login #state-flow #state-account #state-error
+                  （#state-nologin「无需登录」已移除：不支持无需登录的账户平台）
+     登录流程： #btn-login #flow-browser #flow-device #auth-url #device-code #device-uri
+                #btn-copy-url #btn-open-browser #btn-login-done #btn-copy-code
+                #btn-open-verify #btn-login-cancel #login-status-dot #login-status-text
+                #login-countdown
+     账户信息： #account-avatar #account-name #account-uid #account-state #account-expiry
+                #account-display-name #account-platform-uid #account-email
+                #account-expires-at #account-refresh-token
+     操作：     #btn-refresh-token #btn-relogin #btn-logout #account-switcher #account-chips
+     失败态：   #error-title #error-desc #btn-error-retry #btn-error-back
+     Java 生成的列表项：.list-item(± .active) > .pf-icon + .list-item-main
+                        > .list-item-name + .list-item-sub，尾部 .list-item-tail > .dot
+
+   【multiplayerservices.html】 #service-list #service-count #service-empty
+     #btn-refresh #btn-settings #detail-head(+icon/name/desc/badge) #detail-body #detail-tags
+     状态块： #state-none #state-locked #state-ready #state-error
+     锁定态： #locked-title #locked-desc #locked-service-* #locked-platform-* #btn-go-account
+     可用态： #ready-icon #ready-name #ready-desc #ready-tags #ready-state #ready-bind
+              #ready-status #ready-address #ready-account #ready-expire #ready-ping
+              #btn-open-service #btn-service-start #btn-service-stop #btn-service-settings
+     失败态： #error-title #error-desc #btn-error-retry #btn-error-settings
+     绑定关系卡：.bind-card > .bind-arrow + .bind-main > .bind-title + .bind-sub
+
+   【selection.html】 #selection-count #selection-hint #selection-list #selection-empty
+     #btn-empty-settings #btn-refresh #btn-settings
+     行：.sel-item(± .is-disabled) > .sel-body(点整行进入,绑在它上面)
+         > .pf-icon.pf-icon-lg + .sel-main > .sel-name + .sel-desc + .sel-tags
+         + .sel-actions > .btn
+     Java 生成的 id 形态：sel-item-<id> / sel-icon-<id> / sel-name-<id> / sel-desc-<id>
+                          / sel-state-<id> / sel-bind-<id>
+                          / btn-goto-settings-<id>（可用行）/ btn-goto-account-<id>（不可用行）
+   ========================================================================== */
+
+/* ==========================================================================
+   §14 背景方案小史（避免以后重复踩坑）
+   --------------------------------------------------------------------------
+   现在：纯 CSS 渐变。
+       .bg          —— 兜底色 + 裁剪容器
+       .bg-rot      —— 300%×300%、rotate(49deg) 的旋转容器，画三条主色带 + 两条接缝
+       .bg-skin     —— .bg-rot 的子元素，画中间带的「沿带渐变」
+   低版本 AUI 踩过的坑（§0 里已汇总；新版已修复，仅作历史记录）：
+       · transform 里的百分号 translate(-50%,-50%) 被丢弃 → 色带容器跑到视口右下。
+         现在用 left/top:-100% 居中，与 translate 写法完全等价，两种版本都安全。
+       · transform 不作用于子元素 → .bg-skin 会横平竖直画成一块矩形。
+       · background-image 的第二层不套 transform → 别把沿带渐变并成第二层。
+       · transform 会"泄漏"给紧随其后的兄弟节点（写成兄弟节点时要 rotate(0deg)）。
+   备用：贴图方案（img/bg.png = 设计原图 1.png），启用方式见 §2 .bg 的注释。
+   ========================================================================== */

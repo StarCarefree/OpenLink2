@@ -1,0 +1,686 @@
+/* ==========================================================================
+   OpenLink 2 · 薄荷主题 —— 页面排版层
+   --------------------------------------------------------------------------
+   这一层只放"某个页面专属"的排版；通用组件（面板/按钮/徽标/表单…）在 theme.css。
+   ★ theme.css 必须先于本文件加载（页面里两个 <link> 的顺序就是这个原因）：
+     本文件大量复用 theme.css 的令牌 var(--*) 与组件类。
+
+   收录的页面：
+     P1  settings.html            单栏设置列表
+     P2  accountplatforms.html    左列表 + 右详情（登录流程 / 账户信息）
+     P3  multiplayerservices.html 左列表 + 右详情（绑定关系卡 / 服务信息）
+     P4  selection.html           单栏大卡片列表（选择联机服务）
+     P5  响应式：窄窗口 / 矮窗口适配（@media）
+
+   ── 给 AI / agent ─────────────────────────────────────────────────
+   · 新增页面专属样式加到对应 P 段，不要污染 theme.css 的通用组件。
+   · 要复用的视觉一律取 theme.css 的令牌与类，别在这里重画按钮/面板。
+   · 断点只有 4 档（1300 / 1080 / 900 宽，800 高），改版式时先看 P5 会不会打架。
+   ========================================================================== */
+
+/* ==========================================================================
+   P1  settings.html —— 通用设置页
+   --------------------------------------------------------------------------
+   结构：.settings-wrap（限制宽度并居中）
+           > .panel
+               > .panel-head（标题 + 作用域徽标）
+               > .panel-body.set-list（Java 往里塞 .set-group / .set-row）
+               > .panel-foot（恢复默认 / 关闭 / 保存）
+   行内零件：.set-group 分组标题 / .set-row 一行
+             > .set-main（.set-label + .set-desc）+ .set-ctrl（控件）
+             .set-note / .set-note-warn 说明块，.set-sep 分隔线
+   ========================================================================== */
+
+.settings-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.settings-wrap .panel {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.set-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 8px 10px 16px 10px;
+}
+
+/* 分组标题（Java 插入） */
+.set-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 14px 10px 4px 10px;
+    padding: 0 0 6px 0;
+    font-size: 16px;
+    line-height: 1.3;
+    color: var(--c-ink-3);
+    border-bottom: 1px solid var(--c-line);
+}
+
+/* 设置行（Java 插入） */
+.set-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-4);
+    width: 100%;
+    padding: 12px 10px;
+    border-radius: var(--r-md);
+    border-bottom: 1px solid rgba(220, 235, 230, 0.7);
+}
+
+.set-row:hover {
+    background-color: var(--c-surface-2);
+}
+
+.set-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 3px;
+}
+
+.set-label {
+    font-size: 18px;
+    line-height: 1.35;
+    color: var(--c-ink);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.set-desc {
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--c-ink-3);
+}
+
+.set-ctrl {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    flex: 0 0 auto;
+}
+
+.set-note {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    margin: 6px 10px 10px 10px;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    background-color: var(--c-surface-3);
+    color: var(--c-ink-2);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.set-note-warn {
+    background-color: var(--c-warn-soft);
+    color: #8f5709;
+}
+
+.set-sep {
+    height: 1px;
+    margin: 6px 10px;
+    background-color: var(--c-line);
+}
+
+/* ==========================================================================
+   P2  accountplatforms.html —— 账户平台
+   --------------------------------------------------------------------------
+   结构：左 .panel-left（平台列表）+ 右 .panel-right（详情）
+     列表项（Java 生成）：.list-item(±.active) > .pf-icon + .list-item-main + .list-item-tail
+     详情：.detail-head（图标/名称/说明/徽标）+ .detail-body（六个状态块二选一显示）
+       #state-login   未登录引导（#login-hero-*）
+       #state-flow    登录流程：.flow-wrap > .flow-block（#flow-browser / #flow-device）
+                      + .flow-status 轮询状态行
+       #state-account 账户卡片 .account-card（.avatar + .account-main）
+                      + .info-list 信息表 + .account-actions + .chip-row 多账号切换
+   ========================================================================== */
+
+/* （.login-hero 是早期的"未登录"整屏布局，已由 #state-login 状态块取代，
+     四个页面和 Java 侧都不再引用，故删除。） */
+
+/* 登录流程 */
+.flow-wrap {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    gap: 14px;
+}
+
+.flow-title {
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--c-ink);
+}
+
+.flow-sub {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--c-ink-2);
+}
+
+.flow-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    width: 100%;
+    padding: var(--sp-4);
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-lg);
+    background-color: var(--c-surface-2);
+}
+
+.flow-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.flow-foot {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    width: 100%;
+}
+
+/* 设备码 */
+.device-code {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 16px 18px;
+    border-radius: var(--r-md);
+    background-color: var(--c-accent-soft);
+    color: var(--c-accent-2);
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 6px;
+    text-align: center;
+    user-select: text;
+}
+
+/* 已登录：账户卡片 */
+.account-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-4);
+    width: 100%;
+    padding: 18px;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-lg);
+    background-color: var(--c-surface-2);
+}
+
+.avatar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background-color: var(--c-accent);
+    color: var(--c-ink-invert);
+    font-size: 31px;
+    font-weight: 700;
+    line-height: 1;
+    overflow: hidden;
+    box-shadow: var(--sh-1);
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.account-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--sp-1);
+}
+
+.account-name {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--c-ink);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.account-id {
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--c-ink-3);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.account-tags {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.account-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+/* 多账号切换 */
+.chip-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.chip {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    height: 36px;
+    padding: 0 14px 0 6px;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-pill);
+    background-color: var(--c-surface-2);
+    color: var(--c-ink-2);
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.chip:hover {
+    background-color: var(--c-surface-2);
+}
+
+.chip.active {
+    border-color: rgba(15, 158, 141, 0.45);
+    background-color: var(--c-accent-soft);
+    color: var(--c-accent-2);
+}
+
+.chip-name {
+    max-width: 160px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* 登录状态行 */
+.flow-status {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    width: 100%;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--c-ink-2);
+}
+
+/* ==========================================================================
+   P3  multiplayerservices.html —— 联机平台
+   --------------------------------------------------------------------------
+   结构：左 .panel-left（联机平台列表）+ 右 .panel-right（详情）
+     可用态 #state-ready：.svc-hero（图标 + 名称/说明 + .svc-actions 按钮组）
+                          + .info-list 信息表
+     锁定态 #state-locked：提示文案 + .bind-card（.bind-arrow + .bind-main
+                           > .bind-title + .bind-sub）表示「联机平台 → 账户平台」绑定关系
+   ========================================================================== */
+
+/* 服务信息块 */
+.svc-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+.svc-hero-head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-4);
+    width: 100%;
+}
+
+.svc-hero-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--sp-1);
+}
+
+.svc-hero-name {
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--c-ink);
+}
+
+.svc-hero-desc {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--c-ink-2);
+}
+
+.svc-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* 绑定关系卡 */
+.bind-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-md);
+    background-color: var(--c-surface-2);
+}
+
+.bind-arrow {
+    flex: 0 0 auto;
+    color: var(--c-ink-3);
+    font-size: 19px;
+    line-height: 1;
+}
+
+.bind-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 3px;
+}
+
+.bind-title {
+    font-size: 17px;
+    line-height: 1.3;
+    color: var(--c-ink);
+}
+
+.bind-sub {
+    font-size: 14px;
+    line-height: 1.35;
+    color: var(--c-ink-3);
+}
+
+/* ==========================================================================
+   P4  selection.html —— 选择联机服务
+   --------------------------------------------------------------------------
+   结构：.sel-wrap > .sel-bar（数量徽标 + 提示）+ .sel-list（Java 生成 .sel-item）
+     一张卡片 = .sel-item > .sel-body（图标 .pf-icon-lg + .sel-main
+                > .sel-name + .sel-desc + .sel-tags）+ .sel-actions（右侧按钮）
+     ★ 可用行：点击绑在 .sel-body 上（点整行进入），右侧只放「平台设置」
+     ★ 不可用行：加 .is-disabled —— 只把 .sel-body 文字区变灰（opacity + grayscale），
+                按钮仍然可点，所以「去登录」不会被禁用
+   ========================================================================== */
+
+.sel-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+.sel-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+    width: 100%;
+    padding: 0 4px 12px 4px;
+}
+
+.sel-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2px 6px 18px 2px;
+}
+
+.sel-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-4);
+    width: 100%;
+    padding: 16px 18px;
+    border: 1px solid var(--c-line-light);
+    border-radius: var(--r-lg);
+    background-color: var(--c-surface-strong);
+    /* 大模糊阴影在 AUI 里会变成实心灰块，所以只用小模糊（同 .panel） */
+    box-shadow: 0 1px 2px rgba(16, 51, 47, 0.05);
+    transition: background-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.sel-item:hover {
+    background-color: rgba(255, 255, 255, 0.48);
+    box-shadow: 0 1px 3px rgba(16, 51, 47, 0.08);
+}
+
+.sel-body {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-4);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sel-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--sp-1);
+}
+
+.sel-name {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--c-ink);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.sel-desc {
+    font-size: 16px;
+    line-height: 1.45;
+    color: var(--c-ink-2);
+}
+
+.sel-tags {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+.sel-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+/* 不可用：整卡降饱和 + 文案区变灰，但按钮仍可点 */
+.sel-item.is-disabled {
+    background-color: rgba(236, 240, 239, 0.42);
+    border-color: rgba(255, 255, 255, 0.40);
+    box-shadow: none;
+}
+
+.sel-item.is-disabled:hover {
+    background-color: rgba(236, 240, 239, 0.52);
+    box-shadow: none;
+}
+
+.sel-item.is-disabled .sel-body {
+    opacity: 0.45;
+    filter: grayscale(0.85);
+}
+
+.sel-item.is-disabled .sel-name {
+    color: var(--c-ink-2);
+}
+
+/* ==========================================================================
+   P5  响应式：单栏页面的顶栏对齐 + 窄窗口 / 矮窗口适配
+   --------------------------------------------------------------------------
+   · .app-w960 / .app-w1080：单栏页面（设置页 / 选择页）把顶栏也限制到同宽并居中，
+     这样「返回 / 刷新 / 设置」按钮的边缘和面板对齐。
+   · 断点只有 4 档：宽 1300 / 1080 / 900，高 800。
+     AUI 的 @media 只支持 min/max-width|height + orientation，
+     所以窄窗口靠这里收紧留白，不靠 flex 换行。
+   ========================================================================== */
+
+.app-w960 .topbar {
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.app-w1080 .topbar {
+    max-width: 1080px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ==========================================================================
+   窗口越小，四周留白按比例收紧（默认：上 76 / 下 52 / 左右 64）
+   ========================================================================== */
+
+@media (max-width: 1300px) {
+    .app {
+        padding: 56px 36px 36px 36px;
+    }
+
+    .panel-left {
+        flex: 0 0 300px;
+    }
+}
+
+@media (max-width: 1080px) {
+    .app {
+        padding: 40px 24px 26px 24px;
+    }
+
+    .panel-left {
+        flex: 0 0 260px;
+    }
+
+    .input {
+        width: 200px;
+    }
+}
+
+@media (max-width: 900px) {
+    .app {
+        padding: 30px 16px 18px 16px;
+    }
+
+    .topbar {
+        height: 58px;
+        flex: 0 0 58px;
+        margin-bottom: 8px;
+    }
+
+    .content {
+        gap: var(--sp-1);
+    }
+
+    .panel-left {
+        flex: 0 0 220px;
+    }
+
+    .pf-icon-lg {
+        width: 64px;
+        height: 64px;
+        font-size: 33px;
+    }
+
+    .device-code {
+        font-size: 29px;
+        letter-spacing: 4px;
+    }
+}
+
+/* 矮窗口（比如 720p 全屏）收紧上下留白，别挤掉面板高度 */
+@media (max-height: 800px) {
+    .app {
+        padding: 34px 40px 26px 40px;
+    }
+
+    .topbar {
+        height: 58px;
+        flex: 0 0 58px;
+        margin-bottom: 10px;
+    }
+}

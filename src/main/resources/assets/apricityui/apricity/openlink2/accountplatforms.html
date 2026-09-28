@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="aui-viewport" content="mode=browser,zoom=1,user-scalable=false">
+    <meta name="aui-mouse-events" content="intercept">
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+<!--
+  accountplatforms.html —— 账户平台（左列表 + 右详情）
+  · 页面里没有 JavaScript，交互全在 Java 侧；每个交互元素都有稳定 id。
+  · 可见区域默认是【空态】：没有任何演示数据，列表容器都留给 Java 填。
+  · 需要复制的结构全部在末尾 #templates 里（Java 侧用法见 README §0.2）。
+  · 左侧：Java 清空 #platform-list 后按平台生成 .list-item（模子见末尾 #templates）。
+  · 右侧：Java 在下面 5 个状态块里【只显示一个】，其余加 .is-hidden：
+      #state-none 未选中 / #state-login 未登录 / #state-flow 登录流程中
+      #state-account 已登录 / #state-error 登录或刷新失败
+    （原 #state-nologin「无需登录」已移除：不支持无需登录的账户平台）
+  · 各 id 的详细行为表见项目 README.md 的「GUI」一节。
+-->
+    <!-- 静态背景：1.png 的三条 49° 斜色带 + 两条接缝暗线，
+         纯 CSS（旋转容器里的 linear-gradient），无动画，Java 不用管背景。 -->
+    <div class="bg" id="bg">
+        <div class="bg-rot">
+            <div class="bg-skin"></div>
+        </div>
+    </div>
+
+<div class="app">
+
+    <!-- ======================= 顶栏 ======================= -->
+    <div class="topbar">
+        <div class="btn btn-ghost" id="btn-back">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M19 12H5M12 19l-7-7 7-7" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span><translation>gui.openlink2.common.back</translation></span>
+        </div>
+        <div class="topbar-title">
+            <div class="t1" id="page-title"><translation>gui.openlink2.accountplatform.title</translation></div>
+            <div class="t2" id="page-subtitle"><translation>gui.openlink2.accountplatform.subtitle</translation></div>
+        </div>
+        <div class="topbar-actions" id="topbar-actions">
+            <div class="btn btn-ghost" id="btn-refresh">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M23 4v6h-6M1 20v-6h6" fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                          stroke-linejoin="round"></path>
+                </svg>
+                <span><translation>gui.openlink2.common.refresh</translation></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= 内容 ======================= -->
+    <div class="content">
+
+        <!-- ---------------- 左：平台列表 ---------------- -->
+        <div class="panel panel-left">
+            <div class="panel-head">
+                <div class="panel-head-main">
+                    <div class="panel-title"><translation>gui.openlink2.accountplatform.panel.title</translation></div>
+                    <div class="panel-sub"><translation>gui.openlink2.accountplatform.panel.sub</translation></div>
+                </div>
+                <div class="badge" id="platform-count">0</div>
+            </div>
+
+            <!-- Java 清空本容器后填充 .list-item（结构见末尾 tpl-platform-item） -->
+            <div class="panel-body">
+                <div class="list" id="platform-list"></div>
+
+                <div class="state state-center" id="platform-empty">
+                    <div class="state-title"><translation>gui.openlink2.accountplatform.empty.title</translation></div>
+                </div>
+            </div>
+
+            <div class="panel-foot">
+                <div class="btn btn-soft btn-block" id="btn-add-account"><translation>gui.openlink2.accountplatform.action.add_account</translation></div>
+            </div>
+        </div>
+
+        <!-- ---------------- 右：详情 ---------------- -->
+        <div class="panel panel-right">
+
+            <!-- 详情头部：Java 选中平台后填 #detail-icon / #detail-name / #detail-desc /
+                 #detail-badge（徽标默认隐藏，选中后去掉 is-hidden） -->
+            <div class="detail-head" id="detail-head">
+                <div class="pf-icon" id="detail-icon">?</div>
+                <div class="detail-head-main">
+                    <div class="detail-title" id="detail-name">—</div>
+                    <div class="detail-sub" id="detail-desc"><translation>gui.openlink2.accountplatform.detail.hint</translation></div>
+                </div>
+                <div class="detail-tags" id="detail-tags">
+                    <span class="badge badge-ok is-hidden" id="detail-badge"></span>
+                </div>
+            </div>
+
+            <div class="detail-body" id="detail-body">
+
+                <!-- ============ 状态 1：未选中（默认显示） ============ -->
+                <div class="state state-center" id="state-none">
+                    <div class="state-title"><translation>gui.openlink2.accountplatform.empty</translation></div>
+                    <div class="state-desc"><translation>gui.openlink2.accountplatform.state.none.desc</translation></div>
+                </div>
+
+                <!-- ============ 状态 2：未登录 ============ -->
+                <div class="state state-center is-hidden" id="state-login">
+                    <div class="state-title" id="login-hero-title"><translation>gui.openlink2.accountplatform.login.title</translation></div>
+                    <div class="state-desc" id="login-hero-desc"><translation>gui.openlink2.accountplatform.login.desc</translation></div>
+                    <div class="state-actions">
+                        <div class="btn btn-primary btn-lg" id="btn-login"><translation>gui.openlink2.common.login</translation></div>
+                    </div>
+                    <div class="state-tip mt-4" id="login-hero-tip"><translation>gui.openlink2.accountplatform.login.tip</translation></div>
+                </div>
+
+                <!-- ============ 状态 3：登录流程 ============ -->
+                <div class="state is-hidden" id="state-flow">
+                    <div class="flow-wrap">
+                        <div>
+                            <div class="flow-title" id="flow-title"><translation>gui.openlink2.accountplatform.login.flow.title</translation></div>
+                            <div class="flow-sub" id="flow-sub"><translation>gui.openlink2.accountplatform.login.flow.sub</translation></div>
+                        </div>
+
+                        <!-- 3a. BROWSER_OAUTH -->
+                        <div class="flow-block" id="flow-browser">
+                            <div class="field-label"><translation>gui.openlink2.accountplatform.login.field.url</translation></div>
+                            <div class="copy-box">
+                                <div class="copy-text" id="auth-url">—</div>
+                            </div>
+                            <div class="flow-actions">
+                                <div class="btn btn-ghost btn-sm" id="btn-copy-url"><translation>gui.openlink2.accountplatform.login.copy_link</translation></div>
+                                <div class="btn btn-primary btn-sm" id="btn-open-browser"><translation>gui.openlink2.accountplatform.login.open_browser</translation></div>
+                            </div>
+                            <div class="state-tip"><translation>gui.openlink2.accountplatform.login.browser_hint</translation></div>
+                            <div class="btn btn-primary btn-block" id="btn-login-done"><translation>gui.openlink2.accountplatform.login.done</translation></div>
+                        </div>
+
+                        <!-- 3b. DEVICE_CODE -->
+                        <div class="flow-block is-hidden" id="flow-device">
+                            <div class="field-label"><translation>gui.openlink2.accountplatform.login.device_hint</translation></div>
+                            <div class="device-code" id="device-code">----</div>
+                            <div class="flow-actions">
+                                <div class="btn btn-ghost btn-sm" id="btn-copy-code"><translation>gui.openlink2.accountplatform.login.copy_code</translation></div>
+                                <div class="btn btn-primary btn-sm" id="btn-open-verify"><translation>gui.openlink2.accountplatform.login.open_verify</translation></div>
+                            </div>
+                            <div class="field-label mt-4"><translation>gui.openlink2.accountplatform.login.field.verify_uri</translation></div>
+                            <div class="copy-text" id="device-uri">—</div>
+                            <div class="state-tip" id="device-hint"><translation>gui.openlink2.accountplatform.login.waiting_hint</translation></div>
+                        </div>
+
+                        <!-- 流程状态 / 轮询倒计时 -->
+                        <div class="flow-status">
+                            <span class="dot dot-warn" id="login-status-dot"></span>
+                            <span id="login-status-text"><translation>gui.openlink2.accountplatform.login.waiting</translation></span>
+                            <span class="text-dim" id="login-countdown"></span>
+                        </div>
+
+                        <div class="flow-foot">
+                            <div class="btn btn-ghost" id="btn-login-cancel"><translation>gui.openlink2.accountplatform.action.cancel</translation></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ 状态 4：已登录（Java 填充） ============ -->
+                <div class="state is-hidden" id="state-account">
+                    <div class="account-card">
+                        <div class="avatar" id="account-avatar">—</div>
+                        <div class="account-main">
+                            <div class="account-name" id="account-name">—</div>
+                            <div class="account-id" id="account-uid">—</div>
+                            <div class="account-tags">
+                                <span class="badge badge-ok" id="account-state"><translation>gui.openlink2.accountplatform.state.valid</translation></span>
+                                <span class="badge" id="account-expiry">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-list mt-4">
+                        <div class="info-row">
+                            <div class="info-k"><translation>gui.openlink2.accountplatform.info.display_name</translation></div>
+                            <div class="info-v" id="account-display-name">—</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-k"><translation>gui.openlink2.accountplatform.info.user_id</translation></div>
+                            <div class="info-v info-v-mono" id="account-platform-uid">—</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-k"><translation>gui.openlink2.accountplatform.info.email</translation></div>
+                            <div class="info-v" id="account-email">—</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-k"><translation>gui.openlink2.accountplatform.info.expires_at</translation></div>
+                            <div class="info-v" id="account-expires-at">—</div>
+                        </div>
+                        <div class="info-row info-row-last">
+                            <div class="info-k"><translation>gui.openlink2.accountplatform.info.refresh_token</translation></div>
+                            <div class="info-v" id="account-refresh-token">—</div>
+                        </div>
+                    </div>
+
+                    <div class="account-actions mt-4">
+                        <div class="btn btn-ghost" id="btn-refresh-token"><translation>gui.openlink2.accountplatform.action.refresh</translation></div>
+                        <div class="btn btn-ghost" id="btn-relogin"><translation>gui.openlink2.accountplatform.action.relogin</translation></div>
+                        <div class="btn btn-danger-ghost" id="btn-logout"><translation>gui.openlink2.accountplatform.action.logout</translation></div>
+                    </div>
+
+                    <!-- 同一平台下绑定多个账号时显示 -->
+                    <div class="mt-5 is-hidden" id="account-switcher">
+                        <div class="field-label"><translation>gui.openlink2.accountplatform.account.switcher</translation></div>
+                        <div class="chip-row" id="account-chips"></div>
+                    </div>
+                </div>
+
+                <!-- ============ 状态 5：失败 ============ -->
+                <div class="state state-center is-hidden" id="state-error">
+                    <div class="state-title" id="error-title"><translation>gui.openlink2.accountplatform.error.title</translation></div>
+                    <div class="state-desc" id="error-desc">—</div>
+                    <div class="state-actions">
+                        <div class="btn btn-ghost" id="btn-error-back"><translation>gui.openlink2.common.back</translation></div>
+                        <div class="btn btn-primary" id="btn-error-retry"><translation>gui.openlink2.common.retry</translation></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================ Java 侧模板 ============================
+     整块 display:none，只当模子用：
+
+         Element item = doc.getElementById("tpl-platform-item").cloneNode(true);
+         item.setAttribute("id", "platform-item-" + platformId);   // 再改文案
+         doc.getElementById("platform-list").appendChild(item);
+
+     · 有真实平台图标时，把 .pf-icon 换成 <img class="pf-icon-img" src="img/xxx.png">
+       （也可以给 .pf-icon 设 setInlineStyleProperty("background-color", "#0f9e8d")）
+     · 选中态：给当前项加 .active，并确保其它项没有
+     · 头像 #account-avatar：getAvatarUrl() 有值时清空文本塞 <img>，否则用显示名首字
+     ==================================================================== -->
+<div id="templates" class="is-hidden">
+
+    <!-- 左侧平台项：已登录用 dot-ok，未登录用 dot-idle
+         三个文案槽位：.pf-icon 首字母 / .list-item-name 平台名 / .list-item-sub 状态行 -->
+    <div class="list-item" id="tpl-platform-item">
+        <div class="pf-icon">A</div>
+        <div class="list-item-main">
+            <div class="list-item-name">平台名称</div>
+            <div class="list-item-sub">已登录 · 用户名</div>
+        </div>
+        <div class="list-item-tail"><span class="dot dot-ok"></span></div>
+    </div>
+
+    <!-- 多账号切换 chip（账号数 > 1 时用；当前账号加 .active）
+         两个文案槽位：.pf-icon 首字母 / .chip-name 显示名 -->
+    <div class="chip" id="tpl-account-chip">
+        <div class="pf-icon pf-icon-sm">A</div>
+        <div class="chip-name">用户名</div>
+    </div>
+</div>
+</body>
+</html>
